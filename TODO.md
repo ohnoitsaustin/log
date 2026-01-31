@@ -13,15 +13,15 @@
 
 ## Non-Negotiables
 
-| Principle | What it means |
-|---|---|
-| **Encryption by default** | All entry content + media encrypted client-side (AES-256-GCM via Web Crypto API). Supabase never sees plaintext. Keys derived from user passphrase via Argon2id / PBKDF2, never stored server-side. |
-| **No streaks / no gamification** | No streak counters, no points, no badges, no "you missed a day" nudges. Zero notifications. |
-| **No notifications** | The app never pings you. You come to it when you want to. |
-| **Exportable forever** | One-click export: encrypted vault → decrypted JSON + Markdown + media folder. Works offline. |
-| **Tag-heavy taxonomy** | Every entry has explicit user tags. Derived/auto tags come later (M3). Free-text tags, no forced categories. |
-| **Capture-first UX** | The creation flow is ≤2 taps/clicks to start writing. Analytics and browsing live in separate views. |
-| **Open local-first spirit** | Even though we use Supabase, the architecture should allow a future local-only / self-hosted mode. |
+| Principle                        | What it means                                                                                                                                                                                       |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Encryption by default**        | All entry content + media encrypted client-side (AES-256-GCM via Web Crypto API). Supabase never sees plaintext. Keys derived from user passphrase via Argon2id / PBKDF2, never stored server-side. |
+| **No streaks / no gamification** | No streak counters, no points, no badges, no "you missed a day" nudges. Zero notifications.                                                                                                         |
+| **No notifications**             | The app never pings you. You come to it when you want to.                                                                                                                                           |
+| **Exportable forever**           | One-click export: encrypted vault → decrypted JSON + Markdown + media folder. Works offline.                                                                                                        |
+| **Tag-heavy taxonomy**           | Every entry has explicit user tags. Derived/auto tags come later (M3). Free-text tags, no forced categories.                                                                                        |
+| **Capture-first UX**             | The creation flow is ≤2 taps/clicks to start writing. Analytics and browsing live in separate views.                                                                                                |
+| **Open local-first spirit**      | Even though we use Supabase, the architecture should allow a future local-only / self-hosted mode.                                                                                                  |
 
 ---
 
@@ -32,6 +32,7 @@
 > **Goal:** Repo builds, deploys to Vercel, has basic auth and empty shell pages.
 
 #### UI/UX
+
 - [ ] Landing / marketing page (minimal — can be a single "Log in" button for now)
 - [ ] Auth pages: sign-up, sign-in, forgot-password (Supabase Auth UI or custom)
 - [ ] App shell with sidebar/bottom-nav: **New Entry**, **Timeline**, **Tags**, **Settings**
@@ -39,30 +40,36 @@
 - [ ] Responsive: mobile-first, works on desktop
 
 #### Data Model & Storage
+
 - [ ] Supabase project provisioned (dev + staging)
 - [ ] Initial Postgres schema migration (see schema draft below)
 - [ ] Row-Level Security (RLS) policies: users can only access their own rows
 - [ ] Supabase Storage bucket for encrypted media blobs
 
 #### Encryption & Key Management
+
 - [ ] Spike: Web Crypto API — confirm AES-256-GCM + PBKDF2/Argon2id works in all target browsers
 - [ ] Design key derivation flow (passphrase → master key → per-entry key or single key?)
 - [ ] Stub encryption/decryption utility module (`lib/crypto.ts`)
 
 #### Export/Import
+
 - [ ] (nothing yet — just ensure schema supports future export)
 
 #### Testing
+
 - [ ] ESLint + Prettier configured and passing
 - [ ] CI pipeline: GitHub Actions — lint, type-check, build
 - [ ] Playwright or Cypress stub for smoke test (app loads, auth redirect works)
 
 #### Security Notes
+
 - [ ] `.env.local` for Supabase keys; never commit secrets
 - [ ] Supabase anon key is public; service-role key only in server-side functions
 - [ ] CSP headers configured in `next.config.ts`
 
 #### Definition of Done — M0
+
 - App deploys to Vercel and loads without errors.
 - User can sign up, sign in, and sign out via Supabase Auth.
 - Empty shell pages render behind auth guard.
@@ -76,6 +83,7 @@
 > **Goal:** Users can create, read, list, tag, and export text entries. All content is encrypted client-side.
 
 #### UI/UX
+
 - [ ] **New Entry** page: large text area, tag input (comma-separated or chip-style), optional mood/energy selector
 - [ ] **Timeline** page: reverse-chronological list of entries (decrypt on read)
 - [ ] Entry detail view (tap to expand / full page)
@@ -84,12 +92,14 @@
 - [ ] Keyboard shortcut: `Cmd+N` / `Ctrl+N` → new entry
 
 #### Data Model & Storage
+
 - [ ] `entries` table populated: `id`, `user_id`, `encrypted_blob`, `iv`, `created_at`, `updated_at`
 - [ ] `tags` table + `entry_tags` join table
 - [ ] Indexes on `user_id`, `created_at`, tag name
 - [ ] Soft-delete column (`deleted_at`) for entries
 
 #### Encryption & Key Management
+
 - [ ] Passphrase setup flow on first login (derive master key, store encrypted key-check blob)
 - [ ] Encrypt entry body + metadata JSON client-side before INSERT
 - [ ] Decrypt entry on SELECT client-side
@@ -97,23 +107,27 @@
 - [ ] Handle wrong-passphrase gracefully (key-check blob verification)
 
 #### Export/Import
+
 - [ ] Export all entries as decrypted JSON (array of `{ date, body, tags, mood?, ... }`)
 - [ ] Export all entries as Markdown files (one `.md` per entry, YAML frontmatter)
 - [ ] Download as `.zip` via JSZip or similar
 - [ ] Import from JSON (re-encrypt on import)
 
 #### Testing
+
 - [ ] Unit tests: crypto round-trip (encrypt → decrypt = original)
 - [ ] Unit tests: export formatting
 - [ ] Integration test: create entry → list → read back → matches
 - [ ] E2E test: full create → list → export flow
 
 #### Security Notes
+
 - [ ] Verify no plaintext leaks into network tab / Supabase logs
 - [ ] Ensure passphrase is never sent to server
 - [ ] Rate-limit auth attempts (Supabase built-in)
 
 #### Definition of Done — M1
+
 - User can create a text entry with tags; it is encrypted before leaving the browser.
 - Timeline lists entries; tapping one decrypts and displays it.
 - Filter-by-tag works.
@@ -128,6 +142,7 @@
 > **Goal:** Entries can include photos and structured context (mood, energy, location, weather). Search and filtering are usable.
 
 #### UI/UX
+
 - [ ] Image attachment on new entry (camera or file picker, up to 4 images)
 - [ ] Image thumbnails in timeline; full-size in detail view
 - [ ] Context fields: mood (emoji or 1-5 scale), energy (1-5), location (optional text), weather (optional text or auto)
@@ -137,33 +152,39 @@
 - [ ] Delete entry flow (soft-delete, with undo toast)
 
 #### Data Model & Storage
+
 - [ ] `media` table: `id`, `entry_id`, `user_id`, `storage_path`, `encrypted_key`, `mime_type`, `created_at`
 - [ ] Encrypted media blobs stored in Supabase Storage (or Cloudinary later)
 - [ ] Context fields: add `encrypted_context` column to `entries` or store in the encrypted blob
 - [ ] Client-side search index (e.g., MiniSearch or Fuse.js over decrypted entries cached in memory)
 
 #### Encryption & Key Management
+
 - [ ] Encrypt images client-side before upload (chunked if large)
 - [ ] Decrypt images on demand for display (cache decrypted blob in memory / object URL)
 - [ ] Context fields encrypted inside the entry blob (not queryable server-side — by design)
 
 #### Export/Import
+
 - [ ] Export includes media files in a `media/` folder inside the zip
 - [ ] Markdown export embeds `![](media/filename.ext)` references
 - [ ] Import supports entries with media attachments
 
 #### Testing
+
 - [ ] Unit tests: image encrypt/decrypt round-trip
 - [ ] Integration test: create entry with image → read back → image displays
 - [ ] E2E test: search returns correct results
 - [ ] E2E test: export with media produces valid zip
 
 #### Security Notes
+
 - [ ] Image EXIF stripping before encryption (prevent location leaks)
 - [ ] Max upload size enforced client-side and via Supabase Storage policies
 - [ ] Object URLs revoked after use to prevent memory leaks
 
 #### Definition of Done — M2
+
 - Entries support up to 4 attached images, encrypted and stored.
 - Context fields (mood, energy, location, weather) are captured and displayed.
 - Client-side search works across all decrypted entries.
@@ -178,6 +199,7 @@
 > **Goal:** The app gently surfaces patterns. Derived tags are auto-suggested. Still no gamification.
 
 #### UI/UX
+
 - [ ] **Insights** page: gentle trend cards ("You wrote 12 entries this month", "Most common tag: `work`")
 - [ ] Tag frequency chart (bar or word-cloud)
 - [ ] Mood/energy over time chart (line or scatter, smoothed)
@@ -186,28 +208,34 @@
 - [ ] All analytics computed client-side from decrypted data — nothing server-queryable
 
 #### Data Model & Storage
+
 - [ ] `derived_tags` or store suggestions in entry blob
 - [ ] Optional: local IndexedDB cache for faster analytics on large datasets
 
 #### Encryption & Key Management
+
 - [ ] No changes — analytics computed post-decryption in memory
 - [ ] Ensure no analytics data is persisted unencrypted (no localStorage plaintext caches)
 
 #### Export/Import
+
 - [ ] Export includes derived tags in JSON output
 - [ ] Analytics data is not exported (it's computed, not stored)
 
 #### Testing
+
 - [ ] Unit tests: trend calculation functions
 - [ ] Unit tests: derived tag suggestion logic
 - [ ] E2E test: insights page renders charts with sample data
 - [ ] Accessibility: charts have `aria-label` descriptions
 
 #### Security Notes
+
 - [ ] Confirm no plaintext summary data is cached in localStorage / sessionStorage
 - [ ] Client-side NLP model (if used) must not phone home
 
 #### Definition of Done — M3
+
 - Insights page shows meaningful trends from user data.
 - Derived tag suggestions appear and can be accepted or dismissed.
 - All computation is client-side; no plaintext analytics server-side.
@@ -220,6 +248,7 @@
 > **Goal:** Production-quality security, performance, accessibility, and backup strategy.
 
 #### UI/UX
+
 - [ ] Accessibility audit: keyboard navigation, screen reader, contrast ratios (WCAG 2.1 AA)
 - [ ] Performance audit: Lighthouse score ≥ 90 on mobile
 - [ ] Skeleton loading states everywhere
@@ -227,28 +256,33 @@
 - [ ] Settings page: change passphrase, manage export, danger zone (delete account)
 
 #### Data Model & Storage
+
 - [ ] Database backup strategy documented (Supabase daily backups + user-initiated export)
 - [ ] Data retention policy: soft-deleted entries purged after 30 days (configurable)
 - [ ] Migration tooling: versioned migrations with Supabase CLI
 
 #### Encryption & Key Management
+
 - [ ] Passphrase change flow: re-derive key, re-encrypt all entries (background job with progress bar)
 - [ ] Key rotation strategy documented
 - [ ] Emergency recovery: encrypted recovery key flow (print-and-store)
 - [ ] Audit: ensure no plaintext in network requests, logs, or browser storage
 
 #### Export/Import
+
 - [ ] Encrypted vault export (export the raw encrypted blobs + salt so you can restore without re-encrypting)
 - [ ] Cross-device restore from vault export
 - [ ] Export scheduling (optional: weekly export reminder — not a notification, just a settings toggle)
 
 #### Testing
+
 - [ ] Full E2E test suite covering all milestones
 - [ ] Penetration test checklist (manual)
 - [ ] Load test: 10,000 entries, measure decrypt/render time
 - [ ] Accessibility tests: axe-core in CI
 
 #### Security Notes
+
 - [ ] Threat model review (see below)
 - [ ] Dependency audit: `npm audit` in CI, Dependabot enabled
 - [ ] Rate limiting on API routes (Vercel edge middleware or Supabase)
@@ -256,6 +290,7 @@
 - [ ] Subresource Integrity (SRI) for CDN assets if any
 
 #### Definition of Done — M4
+
 - WCAG 2.1 AA compliance on all pages.
 - Lighthouse mobile score ≥ 90.
 - Passphrase change re-encrypts all entries successfully.
@@ -331,25 +366,25 @@ CREATE INDEX idx_media_entry ON media(entry_id);
 
 ### What we protect against
 
-| Threat | Mitigation |
-|---|---|
-| **Server-side data breach** (Supabase DB or storage compromised) | All entry content + media is AES-256-GCM encrypted client-side. Attacker gets ciphertext only. |
-| **Supabase admin / insider access** | Same as above — server never sees plaintext. Keys derived from user passphrase, never stored server-side. |
-| **Network eavesdropping** | HTTPS everywhere (Vercel + Supabase enforce TLS). |
-| **Cross-site scripting (XSS)** | CSP headers, React's built-in escaping, no `dangerouslySetInnerHTML` without sanitization. |
-| **Cross-site request forgery (CSRF)** | Supabase uses JWTs (no cookies for API auth by default), mitigating CSRF. |
-| **Unauthorized access to other users' data** | Supabase RLS policies: every query is scoped to `auth.uid()`. |
-| **Brute-force passphrase guessing** | Argon2id/PBKDF2 with high iteration count makes offline brute-force expensive. |
+| Threat                                                           | Mitigation                                                                                                |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Server-side data breach** (Supabase DB or storage compromised) | All entry content + media is AES-256-GCM encrypted client-side. Attacker gets ciphertext only.            |
+| **Supabase admin / insider access**                              | Same as above — server never sees plaintext. Keys derived from user passphrase, never stored server-side. |
+| **Network eavesdropping**                                        | HTTPS everywhere (Vercel + Supabase enforce TLS).                                                         |
+| **Cross-site scripting (XSS)**                                   | CSP headers, React's built-in escaping, no `dangerouslySetInnerHTML` without sanitization.                |
+| **Cross-site request forgery (CSRF)**                            | Supabase uses JWTs (no cookies for API auth by default), mitigating CSRF.                                 |
+| **Unauthorized access to other users' data**                     | Supabase RLS policies: every query is scoped to `auth.uid()`.                                             |
+| **Brute-force passphrase guessing**                              | Argon2id/PBKDF2 with high iteration count makes offline brute-force expensive.                            |
 
 ### What we do NOT protect against (accepted risks)
 
-| Risk | Why accepted |
-|---|---|
-| **Compromised client device** (malware, keylogger) | Out of scope — if the device is owned, all bets are off. |
-| **User forgets passphrase** | By design — we cannot recover data without the passphrase. Recovery key (M4) mitigates partially. |
+| Risk                                                                          | Why accepted                                                                                           |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Compromised client device** (malware, keylogger)                            | Out of scope — if the device is owned, all bets are off.                                               |
+| **User forgets passphrase**                                                   | By design — we cannot recover data without the passphrase. Recovery key (M4) mitigates partially.      |
 | **Metadata leakage** (timestamps, entry count, tag names if stored plaintext) | Acceptable trade-off for server-side filtering. Can encrypt tags later if needed (see open questions). |
-| **Denial of service on Supabase** | Supabase/Vercel infrastructure handles this; not in our threat model. |
-| **Side-channel attacks on Web Crypto** | Extremely unlikely in browser context; accepted. |
+| **Denial of service on Supabase**                                             | Supabase/Vercel infrastructure handles this; not in our threat model.                                  |
+| **Side-channel attacks on Web Crypto**                                        | Extremely unlikely in browser context; accepted.                                                       |
 
 ### Assumptions
 
@@ -378,17 +413,17 @@ CREATE INDEX idx_media_entry ON media(entry_id);
 
 ## Tech Stack Summary
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js (App Router) + TypeScript |
-| Styling | Tailwind CSS |
-| Auth | Supabase Auth (email/password; social optional) |
-| Database | Supabase Postgres |
+| Layer        | Technology                                           |
+| ------------ | ---------------------------------------------------- |
+| Framework    | Next.js (App Router) + TypeScript                    |
+| Styling      | Tailwind CSS                                         |
+| Auth         | Supabase Auth (email/password; social optional)      |
+| Database     | Supabase Postgres                                    |
 | File Storage | Supabase Storage (→ Cloudinary later for transforms) |
-| Encryption | Web Crypto API (AES-256-GCM) + PBKDF2 or Argon2id |
-| Export | JSZip (client-side zip generation) |
-| Search | MiniSearch or Fuse.js (client-side) |
-| Charts | Recharts or Chart.js (client-side) |
-| Testing | Vitest (unit) + Playwright (E2E) |
-| CI/CD | GitHub Actions → Vercel |
-| Hosting | Vercel |
+| Encryption   | Web Crypto API (AES-256-GCM) + PBKDF2 or Argon2id    |
+| Export       | JSZip (client-side zip generation)                   |
+| Search       | MiniSearch or Fuse.js (client-side)                  |
+| Charts       | Recharts or Chart.js (client-side)                   |
+| Testing      | Vitest (unit) + Playwright (E2E)                     |
+| CI/CD        | GitHub Actions → Vercel                              |
+| Hosting      | Vercel                                               |
