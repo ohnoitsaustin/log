@@ -1,10 +1,64 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { SignOutButton } from "@/components/sign-out-button";
+import { createClient } from "@/lib/supabase/client";
+import { useKey } from "@/components/key-provider";
+import { listEntries } from "@/lib/entries";
+import { exportAsJSON, exportAsMarkdownZip, parseImportJSON, importEntries } from "@/lib/export";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
+  const supabase = createClient();
+  const { key } = useKey();
+
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handleExportJSON() {
+    if (!key) return;
+    setExporting(true);
+    const entries = await listEntries(supabase, key);
+    exportAsJSON(entries);
+    setExporting(false);
+  }
+
+  async function handleExportMarkdown() {
+    if (!key) return;
+    setExporting(true);
+    const entries = await listEntries(supabase, key);
+    await exportAsMarkdownZip(entries);
+    setExporting(false);
+  }
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !key) return;
+
+    setImporting(true);
+    setImportStatus(null);
+
+    try {
+      const raw = await file.text();
+      const blobs = parseImportJSON(raw);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      await importEntries(supabase, key, user.id, blobs);
+      setImportStatus(`Imported ${blobs.length} entries.`);
+    } catch (err) {
+      setImportStatus(err instanceof Error ? err.message : "Import failed.");
+    } finally {
+      setImporting(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   return (
     <div>
@@ -25,6 +79,49 @@ export default function SettingsPage() {
             <option value="light">Light</option>
             <option value="dark">Dark</option>
           </select>
+        </div>
+
+        <div className="border-foreground/10 border-t pt-6">
+          <h2 className="text-foreground text-sm font-medium">Export</h2>
+          <p className="text-foreground/40 mt-1 text-xs">
+            Download all your entries. Data is decrypted locally before export.
+          </p>
+          <div className="mt-3 flex gap-3">
+            <button
+              onClick={handleExportJSON}
+              disabled={exporting}
+              className="border-foreground/20 text-foreground hover:bg-foreground/5 rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-50"
+            >
+              {exporting ? "Exporting..." : "Export JSON"}
+            </button>
+            <button
+              onClick={handleExportMarkdown}
+              disabled={exporting}
+              className="border-foreground/20 text-foreground hover:bg-foreground/5 rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-50"
+            >
+              {exporting ? "Exporting..." : "Export Markdown (.zip)"}
+            </button>
+          </div>
+        </div>
+
+        <div className="border-foreground/10 border-t pt-6">
+          <h2 className="text-foreground text-sm font-medium">Import</h2>
+          <p className="text-foreground/40 mt-1 text-xs">
+            Import entries from a JSON file. Expected format: an array of objects with "body",
+            optional "mood" (1-5), and optional "tags" (string array).
+          </p>
+          <div className="mt-3">
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              disabled={importing}
+              className="text-foreground/60 file:border-foreground/20 file:text-foreground hover:file:bg-foreground/5 text-sm file:mr-3 file:rounded-md file:border file:bg-transparent file:px-3 file:py-1.5 file:text-sm file:transition-colors"
+            />
+            {importing && <p className="text-foreground/40 mt-2 text-xs">Importing...</p>}
+            {importStatus && <p className="text-foreground/60 mt-2 text-xs">{importStatus}</p>}
+          </div>
         </div>
 
         <div className="border-foreground/10 border-t pt-6 md:hidden">

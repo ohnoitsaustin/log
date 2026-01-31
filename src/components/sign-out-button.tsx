@@ -2,12 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useKey } from "@/components/key-provider";
 
 export function SignOutButton() {
   const router = useRouter();
   const supabase = createClient();
+  const { lock } = useKey();
 
   async function handleSignOut() {
+    lock();
     await supabase.auth.signOut();
     router.push("/");
     router.refresh();

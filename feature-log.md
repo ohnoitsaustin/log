@@ -33,3 +33,26 @@ Running log of what was built, when, and any decisions made along the way.
 - `420c894` — chore: add project roadmap
 - `9844297` — feat: M0 skeleton — auth, app shell, crypto, schema
 - `5a54b08` — fix: rename middleware.ts to proxy.ts for Next.js 16
+
+---
+
+## 2026-01-31 — M1: Encrypted Text Entries End-to-End
+
+### What shipped
+- **KeyProvider** — blocking passphrase setup/unlock modals. CryptoKey held in memory only, cleared on sign-out and page reload.
+- **Entry CRUD** — `lib/entries.ts` with `createEntry`, `listEntries`, `getEntry`, `listTags`. All entry content encrypted client-side (AES-256-GCM) before hitting Supabase. bytea columns round-tripped as base64.
+- **New Entry page** — textarea + emoji mood picker (5-point, tap-to-toggle) + chip-style tag input (comma/Enter to add, backspace/click-x to remove). Encrypts and saves, redirects to timeline.
+- **Timeline page** — decrypted entry cards with date, mood emoji, body preview (line-clamp-3), tag chips. Horizontal tag filter bar reading `?tag=` param. Loading skeletons and empty state. 50-entry limit (pagination deferred).
+- **Entry detail view** — `/timeline/[id]` with full decrypted body, mood, tags, date. Back button, not-found state.
+- **Tags page** — lists all user tags, each links to filtered timeline. Empty state if none.
+- **Export/Import** — JSON export (decrypted array), Markdown zip export (one .md per entry with YAML frontmatter), JSON import with validation. All in Settings page.
+- **Keyboard shortcut** — Cmd/Ctrl+N navigates to new entry from anywhere in the app.
+- **Reusable components** — MoodPicker, TagInput, EntryCard, EmptyState, loading skeletons.
+
+### Decisions made
+- **Blocking unlock modal** — key must be in memory before any app content renders. Simpler than decrypt-on-demand.
+- **Single master key** (not per-entry) — good enough for M1, revisit if needed.
+- **Tags duplicated** — plaintext in DB for server-side filtering, also inside encrypted blob for export fidelity.
+- **Mood as 1-5 integer** inside encrypted blob — emoji is just display mapping.
+- **50-entry limit** on timeline — no pagination yet, deferred.
+- **JSZip** for markdown export — lightweight, no server-side processing needed.
