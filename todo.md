@@ -33,40 +33,40 @@
 
 #### UI/UX
 
-- [ ] Landing / marketing page (minimal — can be a single "Log in" button for now)
-- [ ] Auth pages: sign-up, sign-in, forgot-password (Supabase Auth UI or custom)
-- [ ] App shell with sidebar/bottom-nav: **New Entry**, **Timeline**, **Tags**, **Settings**
-- [ ] Dark mode support from day one (Tailwind `dark:` classes)
-- [ ] Responsive: mobile-first, works on desktop
+- [x] Landing / marketing page (minimal — can be a single "Log in" button for now)
+- [x] Auth pages: sign-up, sign-in, forgot-password (Supabase Auth UI or custom)
+- [x] App shell with sidebar/bottom-nav: **New Entry**, **Timeline**, **Tags**, **Settings**
+- [x] Dark mode support from day one (Tailwind `dark:` classes)
+- [x] Responsive: mobile-first, works on desktop
 
 #### Data Model & Storage
 
-- [ ] Supabase project provisioned (dev + staging)
-- [ ] Initial Postgres schema migration (see schema draft below)
-- [ ] Row-Level Security (RLS) policies: users can only access their own rows
-- [ ] Supabase Storage bucket for encrypted media blobs
+- [x] Supabase project provisioned (dev + staging)
+- [x] Initial Postgres schema migration (see schema draft below)
+- [x] Row-Level Security (RLS) policies: users can only access their own rows
+- [x] Supabase Storage bucket for encrypted media blobs
 
 #### Encryption & Key Management
 
-- [ ] Spike: Web Crypto API — confirm AES-256-GCM + PBKDF2/Argon2id works in all target browsers
-- [ ] Design key derivation flow (passphrase → master key → per-entry key or single key?)
-- [ ] Stub encryption/decryption utility module (`lib/crypto.ts`)
+- [x] Spike: Web Crypto API — confirm AES-256-GCM + PBKDF2/Argon2id works in all target browsers
+- [x] Design key derivation flow (passphrase → master key → per-entry key or single key?)
+- [x] Stub encryption/decryption utility module (`lib/crypto.ts`)
 
 #### Export/Import
 
-- [ ] (nothing yet — just ensure schema supports future export)
+- [x] (nothing yet — just ensure schema supports future export)
 
 #### Testing
 
-- [ ] ESLint + Prettier configured and passing
-- [ ] CI pipeline: GitHub Actions — lint, type-check, build
-- [ ] Playwright or Cypress stub for smoke test (app loads, auth redirect works)
+- [x] ESLint + Prettier configured and passing
+- [ ] CI pipeline: GitHub Actions — lint, type-check, build *(deferred)*
+- [ ] Playwright or Cypress stub for smoke test *(deferred)*
 
 #### Security Notes
 
-- [ ] `.env.local` for Supabase keys; never commit secrets
-- [ ] Supabase anon key is public; service-role key only in server-side functions
-- [ ] CSP headers configured in `next.config.ts`
+- [x] `.env.local` for Supabase keys; never commit secrets
+- [x] Supabase anon key is public; service-role key only in server-side functions
+- [x] CSP headers configured in `next.config.ts`
 
 #### Definition of Done — M0
 
@@ -84,47 +84,47 @@
 
 #### UI/UX
 
-- [ ] **New Entry** page: large text area, tag input (comma-separated or chip-style), optional mood/energy selector
-- [ ] **Timeline** page: reverse-chronological list of entries (decrypt on read)
-- [ ] Entry detail view (tap to expand / full page)
-- [ ] Inline tag display with filter-by-tag
-- [ ] Empty states and loading skeletons
-- [ ] Keyboard shortcut: `Cmd+N` / `Ctrl+N` → new entry
+- [x] **New Entry** page: large text area, tag input (comma-separated or chip-style), optional mood/energy selector
+- [x] **Timeline** page: reverse-chronological list of entries (decrypt on read)
+- [x] Entry detail view (tap to expand / full page)
+- [x] Inline tag display with filter-by-tag
+- [x] Empty states and loading skeletons
+- [x] Keyboard shortcut: `Cmd+N` / `Ctrl+N` → new entry
 
 #### Data Model & Storage
 
-- [ ] `entries` table populated: `id`, `user_id`, `encrypted_blob`, `iv`, `created_at`, `updated_at`
-- [ ] `tags` table + `entry_tags` join table
-- [ ] Indexes on `user_id`, `created_at`, tag name
-- [ ] Soft-delete column (`deleted_at`) for entries
+- [x] `entries` table populated: `id`, `user_id`, `encrypted_blob`, `iv`, `created_at`, `updated_at`
+- [x] `tags` table + `entry_tags` join table
+- [x] Indexes on `user_id`, `created_at`, tag name
+- [x] Soft-delete column (`deleted_at`) for entries
 
 #### Encryption & Key Management
 
-- [ ] Passphrase setup flow on first login (derive master key, store encrypted key-check blob)
-- [ ] Encrypt entry body + metadata JSON client-side before INSERT
-- [ ] Decrypt entry on SELECT client-side
-- [ ] Passphrase unlock screen on app load (key held in memory only, never persisted)
-- [ ] Handle wrong-passphrase gracefully (key-check blob verification)
+- [x] Passphrase setup flow on first login (derive master key, store encrypted key-check blob)
+- [x] Encrypt entry body + metadata JSON client-side before INSERT
+- [x] Decrypt entry on SELECT client-side
+- [x] Passphrase unlock screen on app load (key held in memory only, never persisted)
+- [x] Handle wrong-passphrase gracefully (key-check blob verification)
 
 #### Export/Import
 
-- [ ] Export all entries as decrypted JSON (array of `{ date, body, tags, mood?, ... }`)
-- [ ] Export all entries as Markdown files (one `.md` per entry, YAML frontmatter)
-- [ ] Download as `.zip` via JSZip or similar
-- [ ] Import from JSON (re-encrypt on import)
+- [x] Export all entries as decrypted JSON (array of `{ date, body, tags, mood?, ... }`)
+- [x] Export all entries as Markdown files (one `.md` per entry, YAML frontmatter)
+- [x] Download as `.zip` via JSZip or similar
+- [x] Import from JSON (re-encrypt on import)
 
 #### Testing
 
-- [ ] Unit tests: crypto round-trip (encrypt → decrypt = original)
-- [ ] Unit tests: export formatting
-- [ ] Integration test: create entry → list → read back → matches
-- [ ] E2E test: full create → list → export flow
+- [ ] Unit tests: crypto round-trip (encrypt → decrypt = original) *(deferred)*
+- [ ] Unit tests: export formatting *(deferred)*
+- [ ] Integration test: create entry → list → read back → matches *(deferred)*
+- [ ] E2E test: full create → list → export flow *(deferred)*
 
 #### Security Notes
 
-- [ ] Verify no plaintext leaks into network tab / Supabase logs
-- [ ] Ensure passphrase is never sent to server
-- [ ] Rate-limit auth attempts (Supabase built-in)
+- [x] Verify no plaintext leaks into network tab / Supabase logs
+- [x] Ensure passphrase is never sent to server
+- [x] Rate-limit auth attempts (Supabase built-in)
 
 #### Definition of Done — M1
 
@@ -398,13 +398,13 @@ CREATE INDEX idx_media_entry ON media(entry_id);
 
 ## Decisions / Open Questions
 
-1. **Passphrase reset:** If the user forgets their passphrase, all data is unrecoverable. Do we implement a recovery key (printed paper key) in M1 or defer to M4?
+1. ~~**Passphrase reset:**~~ Deferred to M4. No recovery key yet — data is unrecoverable if passphrase is forgotten.
 2. **Tag encryption:** Tags are currently plaintext in the DB for server-side filtering. Should we encrypt tag names too? This would make server-side tag filtering impossible (all filtering client-side).
 3. **Multiple devices:** How do we handle the passphrase across devices? Re-enter on each device? Sync a key-wrapped blob?
 4. **Offline / local-first:** Should we add IndexedDB caching of decrypted entries for offline use in M2 or M4? What sync strategy?
-5. **Key derivation function:** PBKDF2 is natively supported in Web Crypto; Argon2id is better but requires a WASM build. Which do we use? Argon2id via `argon2-browser` WASM, or PBKDF2 with high iterations as a pragmatic start?
-6. **Per-entry keys vs. single master key:** A single derived key is simpler. Per-entry keys (wrapped by master key) allow sharing individual entries later. Worth the complexity now?
-7. **Mood / energy scale:** Emoji-based (😊😐😢), numeric (1–5), or free-form text? Does the schema need to support custom scales?
+5. ~~**Key derivation function:**~~ Resolved: PBKDF2 with 600k iterations (native Web Crypto). Revisit Argon2id in M4.
+6. ~~**Per-entry keys vs. single master key:**~~ Resolved: single master key for now. Simpler, sufficient for M1.
+7. ~~**Mood / energy scale:**~~ Resolved: 5-point emoji picker (1-5 stored as integer, displayed as emoji). Energy deferred to M2.
 8. **Auto-context capture:** Should we auto-capture weather and location (with permission)? Or always manual? Privacy implications of location APIs.
 9. **Supabase Edge Functions:** Do we need any server-side logic (e.g., cleanup cron, email export), or can everything be client-side + RLS?
 10. **Image processing pipeline:** Encrypt-then-upload vs. upload-then-encrypt? EXIF stripping before or after encryption? Max image dimensions / compression before encryption?
