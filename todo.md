@@ -59,7 +59,7 @@
 #### Testing
 
 - [x] ESLint + Prettier configured and passing
-- [ ] CI pipeline: GitHub Actions — lint, type-check, build *(deferred)*
+- [x] CI pipeline: GitHub Actions — lint, type-check, test, build
 - [ ] Playwright or Cypress stub for smoke test *(deferred)*
 
 #### Security Notes
@@ -115,8 +115,8 @@
 
 #### Testing
 
-- [ ] Unit tests: crypto round-trip (encrypt → decrypt = original) *(deferred)*
-- [ ] Unit tests: export formatting *(deferred)*
+- [x] Unit tests: crypto round-trip (encrypt → decrypt = original)
+- [x] Unit tests: export/import JSON parsing
 - [ ] Integration test: create entry → list → read back → matches *(deferred)*
 - [ ] E2E test: full create → list → export flow *(deferred)*
 

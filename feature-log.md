@@ -56,3 +56,14 @@ Running log of what was built, when, and any decisions made along the way.
 - **Mood as 1-5 integer** inside encrypted blob — emoji is just display mapping.
 - **50-entry limit** on timeline — no pagination yet, deferred.
 - **JSZip** for markdown export — lightweight, no server-side processing needed.
+
+---
+
+## 2026-01-31 — CI + Unit Tests
+
+### What shipped
+- **GitHub Actions CI** — runs lint, type-check, format check, unit tests, and build on push/PR to main. Placeholder Supabase env vars for build step.
+- **Vitest** — unit test runner with path alias support.
+- **Crypto tests** — encrypt/decrypt round-trip, wrong-key rejection, unicode handling, empty string, unique IVs, key-check verify/reject (9 tests).
+- **Export tests** — import JSON parsing: valid input, optional fields, non-string tag filtering, error cases (8 tests).
+- Renamed `TODO.md` → `todo.md` and `README.md` → `readme.md`. Updated readme with project docs, todo with M0/M1 completion status.
