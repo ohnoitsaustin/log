@@ -35,7 +35,7 @@ export default function TimelinePage() {
     }
 
     load();
-  }, [key, activeTag]);
+  }, [key, activeTag, supabase]);
 
   return (
     <div>
@@ -54,8 +54,8 @@ export default function TimelinePage() {
           <Link
             href="/timeline"
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${!activeTag
-                ? "bg-foreground text-background"
-                : "bg-foreground/10 text-foreground/60 hover:bg-foreground/20"
+              ? "bg-foreground text-background"
+              : "bg-foreground/10 text-foreground/60 hover:bg-foreground/20"
               }`}
           >
             All
@@ -65,8 +65,8 @@ export default function TimelinePage() {
               key={tag.id}
               href={`/timeline?tag=${encodeURIComponent(tag.name)}`}
               className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${activeTag === tag.name
-                  ? "bg-foreground text-background"
-                  : "bg-foreground/10 text-foreground/60 hover:bg-foreground/20"
+                ? "bg-foreground text-background"
+                : "bg-foreground/10 text-foreground/60 hover:bg-foreground/20"
                 }`}
             >
               {tag.name}

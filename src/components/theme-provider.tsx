@@ -12,12 +12,9 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("system");
-
-  useEffect(() => {
-    const stored = localStorage.getItem("log-theme") as Theme | null;
-    if (stored) setTheme(stored);
-  }, []);
+  const [theme, setTheme] = useState<Theme>(() => {
+    return (localStorage.getItem("log-theme") as Theme | null) ?? "light";
+  });
 
   useEffect(() => {
     const root = document.documentElement;

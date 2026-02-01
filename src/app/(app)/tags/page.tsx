@@ -18,7 +18,7 @@ export default function TagsPage() {
       setLoading(false);
     }
     load();
-  }, []);
+  }, [supabase]);
 
   return (
     <div>

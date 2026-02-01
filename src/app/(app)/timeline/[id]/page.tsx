@@ -34,7 +34,7 @@ export default function EntryDetailPage() {
     }
 
     load();
-  }, [key, id]);
+  }, [key, id, supabase]);
 
   if (loading) {
     return (
