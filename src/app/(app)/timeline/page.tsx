@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useKey } from "@/components/key-provider";
 import { listEntries, listTags, type DecryptedEntry } from "@/lib/entries";
 import { listActivities, type Activity } from "@/lib/activities";
+import { getDrinkCounts } from "@/lib/drinks";
 import { EntryCard } from "@/components/entry-card";
 import { EntryListSkeleton } from "@/components/loading-skeleton";
 import { EmptyState } from "@/components/empty-state";
@@ -20,6 +21,7 @@ export default function TimelinePage() {
   const [entries, setEntries] = useState<DecryptedEntry[]>([]);
   const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [drinkCounts, setDrinkCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,6 +37,19 @@ export default function TimelinePage() {
       setEntries(entryList);
       setTags(tagList);
       setActivities(activityList);
+
+      // Fetch drink counts for all unique dates in the entries
+      const uniqueDates = [
+        ...new Set(
+          entryList.map((e) => {
+            const d = new Date(e.created_at);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          })
+        ),
+      ];
+      const counts = await getDrinkCounts(uniqueDates);
+      setDrinkCounts(counts);
+
       setLoading(false);
     }
 
@@ -132,13 +147,23 @@ export default function TimelinePage() {
                       })}
                     </div>
                   )}
-                  {isFirstOfDay && (
-                    <div className="text-xs font-semibold text-foreground/50 mb-2">
-                      {new Date(entry.created_at).toLocaleDateString("en-US", {
-                        weekday: "long",
-                      })} the {new Date(entry.created_at).getDate()}{getSuffix(new Date(entry.created_at).getDate())}
-                    </div>
-                  )}
+                  {isFirstOfDay && (() => {
+                    const d = new Date(entry.created_at);
+                    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                    const drinks = drinkCounts[dateKey];
+                    return (
+                      <div className="text-xs font-semibold text-foreground/50 mb-2">
+                        {d.toLocaleDateString("en-US", {
+                          weekday: "long",
+                        })} the {d.getDate()}{getSuffix(d.getDate())}
+                        {drinks > 0 && (
+                          <span className="ml-2 text-foreground/30">
+                            &middot; {drinks} {drinks === 1 ? "drink" : "drinks"}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <EntryCard entry={entry} activities={activities} />
                 </div>
               );
