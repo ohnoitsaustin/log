@@ -58,6 +58,45 @@ export async function createEntry(
   return entry.id;
 }
 
+export async function updateEntry(
+  supabase: SupabaseClient,
+  key: CryptoKey,
+  entryId: string,
+  userId: string,
+  blob: EntryBlob,
+): Promise<void> {
+  const plaintext = JSON.stringify(blob);
+  const { ciphertext, iv } = await encrypt(key, plaintext);
+
+  const { error: updateError } = await supabase
+    .from("entries")
+    .update({
+      encrypted_blob: "\\x" + toHex(ciphertext),
+      iv: "\\x" + toHex(iv),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", entryId);
+
+  if (updateError) throw new Error(updateError.message);
+
+  // Remove old tag links, then re-link
+  await supabase.from("entry_tags").delete().eq("entry_id", entryId);
+
+  for (const tagName of blob.tags) {
+    const { data: tag } = await supabase
+      .from("tags")
+      .upsert({ user_id: userId, name: tagName }, { onConflict: "user_id,name" })
+      .select("id")
+      .single();
+
+    if (tag) {
+      await supabase
+        .from("entry_tags")
+        .upsert({ entry_id: entryId, tag_id: tag.id }, { onConflict: "entry_id,tag_id" });
+    }
+  }
+}
+
 export async function listEntries(
   supabase: SupabaseClient,
   key: CryptoKey,

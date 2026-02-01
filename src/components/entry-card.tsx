@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { moodToEmoji } from "@/components/mood-picker";
+import { activityToEmoji } from "@/components/activity-input";
 import type { DecryptedEntry } from "@/lib/entries";
+import type { Activity } from "@/lib/activities";
 
-export function EntryCard({ entry }: { entry: DecryptedEntry }) {
+export function EntryCard({ entry, activities }: { entry: DecryptedEntry; activities: Activity[] }) {
   const emoji = moodToEmoji(entry.mood);
 
   return (
@@ -38,9 +40,10 @@ export function EntryCard({ entry }: { entry: DecryptedEntry }) {
           {entry.activities.map((activity) => (
             <span
               key={activity}
-              className="bg-foreground/10 text-foreground/60 rounded-full px-2 py-0.5 text-xs"
+              className="text-base"
+              title={activity}
             >
-              {activity}
+              {activityToEmoji(activity, activities)}
             </span>
           ))}
         </div>

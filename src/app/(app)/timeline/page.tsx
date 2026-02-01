@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useKey } from "@/components/key-provider";
 import { listEntries, listTags, type DecryptedEntry } from "@/lib/entries";
+import { listActivities, type Activity } from "@/lib/activities";
 import { EntryCard } from "@/components/entry-card";
 import { EntryListSkeleton } from "@/components/loading-skeleton";
 import { EmptyState } from "@/components/empty-state";
@@ -18,6 +19,7 @@ export default function TimelinePage() {
 
   const [entries, setEntries] = useState<DecryptedEntry[]>([]);
   const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,12 +27,14 @@ export default function TimelinePage() {
 
     async function load() {
       setLoading(true);
-      const [entryList, tagList] = await Promise.all([
+      const [entryList, tagList, activityList] = await Promise.all([
         listEntries(supabase, key!, activeTag ?? undefined),
         listTags(supabase),
+        listActivities(supabase),
       ]);
       setEntries(entryList);
       setTags(tagList);
+      setActivities(activityList);
       setLoading(false);
     }
 
@@ -135,7 +139,7 @@ export default function TimelinePage() {
                       })} the {new Date(entry.created_at).getDate()}{getSuffix(new Date(entry.created_at).getDate())}
                     </div>
                   )}
-                  <EntryCard entry={entry} />
+                  <EntryCard entry={entry} activities={activities} />
                 </div>
               );
             })}

@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 import { useKey } from "@/components/key-provider";
 import { getEntry, type DecryptedEntry } from "@/lib/entries";
 import { moodToEmoji } from "@/components/mood-picker";
+import { activityToEmoji } from "@/components/activity-input";
+import { listActivities, createActivity, type Activity } from "@/lib/activities";
+import { EditEntryModal } from "@/components/edit-entry-modal";
 import { EntryCardSkeleton } from "@/components/loading-skeleton";
 import Link from "next/link";
 
@@ -16,17 +19,23 @@ export default function EntryDetailPage() {
   const { key } = useKey();
 
   const [entry, setEntry] = useState<DecryptedEntry | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (!key || !id) return;
 
     async function load() {
       setLoading(true);
-      const result = await getEntry(supabase, key!, id);
+      const [result, activityList] = await Promise.all([
+        getEntry(supabase, key!, id),
+        listActivities(supabase),
+      ]);
       if (result) {
         setEntry(result);
+        setActivities(activityList);
       } else {
         setNotFound(true);
       }
@@ -112,8 +121,28 @@ export default function EntryDetailPage() {
             ))}
           </div>
         )}
+
+        {entry.activities.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {entry.activities.map((activity) => (
+              <span
+                key={activity}
+                className="text-base"
+                title={activity}
+              >
+                {activityToEmoji(activity, activities)}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       <div className="mt-6 flex gap-2">
+        <button
+          onClick={() => setEditing(true)}
+          className="px-3 py-1.5 text-sm rounded bg-foreground/10 text-foreground hover:bg-foreground/20 transition-colors"
+        >
+          Edit Entry
+        </button>
         <button
           onClick={async () => {
             if (confirm("Are you sure you want to delete this entry?")) {
@@ -129,6 +158,36 @@ export default function EntryDetailPage() {
           Delete Entry
         </button>
       </div>
+
+      {editing && (
+        <EditEntryModal
+          entry={entry}
+          availableActivities={activities}
+          onClose={() => setEditing(false)}
+          onSaved={(blob) => {
+            setEntry({
+              ...entry,
+              body: blob.body,
+              mood: blob.mood,
+              tags: blob.tags,
+              activities: blob.activities,
+            });
+            setEditing(false);
+          }}
+          onAddActivity={async (name, emoji) => {
+            const {
+              data: { user },
+            } = await supabase.auth.getUser();
+            if (!user) return;
+            const activity = await createActivity(supabase, user.id, name, emoji);
+            if (activity) {
+              setActivities((prev) =>
+                [...prev, activity].sort((a, b) => a.name.localeCompare(b.name)),
+              );
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

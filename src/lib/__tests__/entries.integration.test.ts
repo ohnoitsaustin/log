@@ -54,6 +54,7 @@ describe.skipIf(!canRun)("entries integration", () => {
       body: "Integration test entry " + Date.now(),
       mood: 4,
       tags: ["test", "integration"],
+      activities: [],
     };
 
     // Create

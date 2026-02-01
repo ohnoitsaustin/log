@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useKey } from "@/components/key-provider";
@@ -8,6 +8,12 @@ import { createEntry } from "@/lib/entries";
 import { MoodPicker } from "@/components/mood-picker";
 import { TagInput } from "@/components/tag-input";
 import { ActivityInput } from "@/components/activity-input";
+import {
+  listActivities,
+  seedDefaultActivities,
+  createActivity,
+  type Activity,
+} from "@/lib/activities";
 
 export default function NewEntryPage() {
   const router = useRouter();
@@ -18,8 +24,40 @@ export default function NewEntryPage() {
   const [mood, setMood] = useState<number | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [activities, setActivities] = useState<string[]>([]);
+  const [availableActivities, setAvailableActivities] = useState<Activity[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const loadActivities = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    let list = await listActivities(supabase);
+    if (list.length === 0) {
+      list = await seedDefaultActivities(supabase, user.id);
+    }
+    setAvailableActivities(list);
+  }, [supabase]);
+
+  useEffect(() => {
+    loadActivities();
+  }, [loadActivities]);
+
+  async function handleAddActivity(name: string, emoji: string) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const activity = await createActivity(supabase, user.id, name, emoji);
+    if (activity) {
+      setAvailableActivities((prev) =>
+        [...prev, activity].sort((a, b) => a.name.localeCompare(b.name)),
+      );
+    }
+  }
 
   async function handleSave() {
     if (!key) return;
@@ -69,7 +107,12 @@ export default function NewEntryPage() {
 
         <div>
           <label className="text-foreground/60 mb-2 block text-sm font-medium">Activities</label>
-          <ActivityInput activities={activities} onChange={setActivities} />
+          <ActivityInput
+            activities={activities}
+            onChange={setActivities}
+            availableActivities={availableActivities}
+            onAddActivity={handleAddActivity}
+          />
         </div>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
