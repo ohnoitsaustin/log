@@ -41,12 +41,6 @@ export default function TimelinePage() {
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-foreground text-2xl font-semibold">Timeline</h1>
-        <Link
-          href="/new-entry"
-          className="bg-foreground text-background rounded-md px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-90"
-        >
-          New Entry
-        </Link>
       </div>
 
       {tags.length > 0 && (
