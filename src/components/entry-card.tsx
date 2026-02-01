@@ -8,7 +8,7 @@ export function EntryCard({ entry }: { entry: DecryptedEntry }) {
   return (
     <Link
       href={`/timeline/${entry.id}`}
-      className="block p-4 transition-colors border-b-1 border-foreground/10 hover:bg-foreground/5"
+      className="block p-4 pl-0 transition-colors border-b-1 border-foreground/10 hover:bg-foreground/5"
     >
       <div className="flex items-center justify-between">
         <time className="text-foreground/40 text-xs">

@@ -5,7 +5,7 @@ export function Header() {
         <header className="bg-background border-b border-foreground/10 px-4 py-3 md:px-6 flex justify-between">
             <h1 className="text-foreground text-lg font-semibold">
                 <img src="/log.svg" alt="log" className="inline-block w-6 h-6 mr-1" />
-                your personal log
+                Plog (your personal log)
             </h1>
             <Link
                 href="/new-entry"

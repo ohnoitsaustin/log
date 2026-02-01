@@ -39,12 +39,8 @@ export default function TimelinePage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-foreground text-2xl font-semibold">Timeline</h1>
-      </div>
-
       {tags.length > 0 && (
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+        <div className="flex gap-2 overflow-x-auto pb-2">
           <Link
             href="/timeline"
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${!activeTag
@@ -119,21 +115,21 @@ export default function TimelinePage() {
               return (
                 <div key={entry.id}>
                   {isFirstOfYear && (
-                    <div className="text-sm font-semibold text-foreground/70 mb-2 mt-4">
+                    <div className="text-lg font-extrabold text-foreground mb-2 mt-4">
                       {new Date(entry.created_at).toLocaleDateString("en-US", {
                         year: "numeric",
                       })}
                     </div>
                   )}
                   {isFirstOfMonth && (
-                    <div className="text-sm font-semibold text-foreground/70 mb-2 mt-4">
+                    <div className="text-sm font-semibold text-foreground/70">
                       {new Date(entry.created_at).toLocaleDateString("en-US", {
                         month: "long",
                       })}
                     </div>
                   )}
                   {isFirstOfDay && (
-                    <div className="text-xs font-semibold text-foreground/50 mb-2 mt-4">
+                    <div className="text-xs font-semibold text-foreground/50 mb-2">
                       {new Date(entry.created_at).toLocaleDateString("en-US", {
                         weekday: "long",
                       })} the {new Date(entry.created_at).getDate()}{getSuffix(new Date(entry.created_at).getDate())}
