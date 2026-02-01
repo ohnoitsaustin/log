@@ -1,5 +1,5 @@
 import { encrypt, decrypt } from "@/lib/crypto";
-import { toBase64, fromBase64 } from "@/lib/crypto-utils";
+import { toHex, fromHex } from "@/lib/crypto-utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface EntryBlob {
@@ -30,8 +30,8 @@ export async function createEntry(
     .from("entries")
     .insert({
       user_id: userId,
-      encrypted_blob: toBase64(ciphertext),
-      iv: toBase64(iv),
+      encrypted_blob: "\\x" + toHex(ciphertext),
+      iv: "\\x" + toHex(iv),
     })
     .select("id")
     .single();
@@ -97,7 +97,7 @@ export async function listEntries(
 
   for (const row of rows) {
     try {
-      const plaintext = await decrypt(key, fromBase64(row.encrypted_blob), fromBase64(row.iv));
+      const plaintext = await decrypt(key, fromHex(row.encrypted_blob), fromHex(row.iv));
       const blob: EntryBlob = JSON.parse(plaintext);
       entries.push({
         id: row.id,
@@ -130,7 +130,7 @@ export async function getEntry(
   if (error || !row) return null;
 
   try {
-    const plaintext = await decrypt(key, fromBase64(row.encrypted_blob), fromBase64(row.iv));
+    const plaintext = await decrypt(key, fromHex(row.encrypted_blob), fromHex(row.iv));
     const blob: EntryBlob = JSON.parse(plaintext);
     return {
       id: row.id,

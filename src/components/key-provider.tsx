@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { createKeyCheck, deriveKey, verifyPassphrase } from "@/lib/crypto";
-import { toBase64, fromBase64 } from "@/lib/crypto-utils";
+import { toHex, fromHex } from "@/lib/crypto-utils";
 
 interface KeyContextValue {
   key: CryptoKey | null;
@@ -142,9 +142,9 @@ function SetupModal({
 
       const { error: insertError } = await supabase.from("key_checks").insert({
         user_id: user!.id,
-        salt: toBase64(salt),
-        iv: toBase64(iv),
-        check_blob: toBase64(checkBlob),
+        salt: "\\x" + toHex(salt),
+        iv: "\\x" + toHex(iv),
+        check_blob: "\\x" + toHex(checkBlob),
       });
 
       if (insertError) {
@@ -237,9 +237,9 @@ function UnlockModal({
     setLoading(true);
 
     try {
-      const saltBytes = fromBase64(storedCheck.salt);
-      const ivBytes = fromBase64(storedCheck.iv);
-      const checkBlobBytes = fromBase64(storedCheck.check_blob);
+      const saltBytes = fromHex(storedCheck.salt);
+      const ivBytes = fromHex(storedCheck.iv);
+      const checkBlobBytes = fromHex(storedCheck.check_blob);
 
       const derivedKey = await verifyPassphrase(passphrase, saltBytes, ivBytes, checkBlobBytes);
 
