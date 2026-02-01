@@ -17,7 +17,7 @@ export default function TimelinePage() {
   const activeTag = searchParams.get("tag");
 
   const [entries, setEntries] = useState<DecryptedEntry[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function TimelinePage() {
     async function load() {
       setLoading(true);
       const [entryList, tagList] = await Promise.all([
-        listEntries(supabase, key!, activeTag),
+        listEntries(supabase, key!, activeTag ?? undefined),
         listTags(supabase),
       ]);
       setEntries(entryList);
@@ -53,25 +53,23 @@ export default function TimelinePage() {
         <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
           <Link
             href="/timeline"
-            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-              !activeTag
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${!activeTag
                 ? "bg-foreground text-background"
                 : "bg-foreground/10 text-foreground/60 hover:bg-foreground/20"
-            }`}
+              }`}
           >
             All
           </Link>
           {tags.map((tag) => (
             <Link
-              key={tag}
-              href={`/timeline?tag=${encodeURIComponent(tag)}`}
-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                activeTag === tag
+              key={tag.id}
+              href={`/timeline?tag=${encodeURIComponent(tag.name)}`}
+              className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${activeTag === tag.name
                   ? "bg-foreground text-background"
                   : "bg-foreground/10 text-foreground/60 hover:bg-foreground/20"
-              }`}
+                }`}
             >
-              {tag}
+              {tag.name}
             </Link>
           ))}
         </div>

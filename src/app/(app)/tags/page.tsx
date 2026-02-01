@@ -14,7 +14,7 @@ export default function TagsPage() {
   useEffect(() => {
     async function load() {
       const result = await listTags(supabase);
-      setTags(result);
+      setTags(result.map((tag) => tag.name));
       setLoading(false);
     }
     load();
