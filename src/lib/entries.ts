@@ -105,8 +105,8 @@ export async function listEntries(
         id: row.id,
         body: blob.body,
         mood: blob.mood,
-        tags: blob.tags,
-        activities: blob.activities,
+        tags: blob.tags ?? [],
+        activities: blob.activities ?? [],
         created_at: row.created_at,
         updated_at: row.updated_at,
       });

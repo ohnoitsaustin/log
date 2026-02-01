@@ -35,6 +35,19 @@ export function EntryCard({ entry }: { entry: DecryptedEntry }) {
             </span>
           ))}
         </div>
+
+      )}
+      {entry.activities.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {entry.activities.map((activity) => (
+            <span
+              key={activity}
+              className="bg-foreground/10 text-foreground/60 rounded-full px-2 py-0.5 text-xs"
+            >
+              {activity}
+            </span>
+          ))}
+        </div>
       )}
     </Link>
   );

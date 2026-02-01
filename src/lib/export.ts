@@ -100,6 +100,37 @@ export function parseImportJSON(raw: string): EntryBlob[] {
   });
 }
 
+export function parseImportCSV(raw: string): EntryBlob[] {
+  const lines = raw.trim().split("\n");
+  if (lines.length < 2) throw new Error("CSV must contain at least a header and one data row.");
+
+  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+  const bodyIndex = headers.indexOf("body");
+  if (bodyIndex === -1) throw new Error('CSV must contain a "body" column.');
+
+  return lines.slice(1).map((line, i) => {
+    const values = line.split(",").map((v) => v.trim());
+    const body = values[bodyIndex];
+
+    return {
+      body,
+      mood: headers.includes("mood") ? parseFloat(values[headers.indexOf("mood")]) || null : null,
+      tags: headers.includes("tags")
+        ? values[headers.indexOf("tags")]
+          .split(";")
+          .map((t) => t.trim())
+          .filter(Boolean)
+        : [],
+      activities: headers.includes("activities")
+        ? values[headers.indexOf("activities")]
+          .split(";")
+          .map((a) => a.trim())
+          .filter(Boolean)
+        : [],
+    };
+  });
+}
+
 export async function importEntries(
   supabase: SupabaseClient,
   key: CryptoKey,
