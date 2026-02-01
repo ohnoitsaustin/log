@@ -6,6 +6,7 @@ export interface EntryBlob {
   body: string;
   mood: number | null;
   tags: string[];
+  activities: string[];
 }
 
 export interface DecryptedEntry {
@@ -13,6 +14,7 @@ export interface DecryptedEntry {
   body: string;
   mood: number | null;
   tags: string[];
+  activities: string[];
   created_at: string;
   updated_at: string;
 }
@@ -104,6 +106,7 @@ export async function listEntries(
         body: blob.body,
         mood: blob.mood,
         tags: blob.tags,
+        activities: blob.activities,
         created_at: row.created_at,
         updated_at: row.updated_at,
       });
@@ -137,6 +140,7 @@ export async function getEntry(
       body: blob.body,
       mood: blob.mood,
       tags: blob.tags,
+      activities: blob.activities,
       created_at: row.created_at,
       updated_at: row.updated_at,
     };

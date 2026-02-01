@@ -7,6 +7,7 @@ import { useKey } from "@/components/key-provider";
 import { createEntry } from "@/lib/entries";
 import { MoodPicker } from "@/components/mood-picker";
 import { TagInput } from "@/components/tag-input";
+import { ActivityInput } from "@/components/activity-input";
 
 export default function NewEntryPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function NewEntryPage() {
   const [body, setBody] = useState("");
   const [mood, setMood] = useState<number | null>(null);
   const [tags, setTags] = useState<string[]>([]);
+  const [activities, setActivities] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +33,7 @@ export default function NewEntryPage() {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      await createEntry(supabase, key, user.id, { body: body.trim(), mood, tags });
+      await createEntry(supabase, key, user.id, { body: body.trim(), mood, tags, activities });
       router.push("/timeline");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save entry.");
@@ -63,6 +65,11 @@ export default function NewEntryPage() {
         <div>
           <label className="text-foreground/60 mb-2 block text-sm font-medium">Tags</label>
           <TagInput tags={tags} onChange={setTags} />
+        </div>
+
+        <div>
+          <label className="text-foreground/60 mb-2 block text-sm font-medium">Activities</label>
+          <ActivityInput activities={activities} onChange={setActivities} />
         </div>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
