@@ -24,17 +24,21 @@ export async function createEntry(
   key: CryptoKey,
   userId: string,
   blob: EntryBlob,
+  createdAt?: string,
 ): Promise<string> {
   const plaintext = JSON.stringify(blob);
   const { ciphertext, iv } = await encrypt(key, plaintext);
 
+  const row: Record<string, unknown> = {
+    user_id: userId,
+    encrypted_blob: "\\x" + toHex(ciphertext),
+    iv: "\\x" + toHex(iv),
+  };
+  if (createdAt) row.created_at = createdAt;
+
   const { data: entry, error: entryError } = await supabase
     .from("entries")
-    .insert({
-      user_id: userId,
-      encrypted_blob: "\\x" + toHex(ciphertext),
-      iv: "\\x" + toHex(iv),
-    })
+    .insert(row)
     .select("id")
     .single();
 
@@ -186,6 +190,17 @@ export async function getEntry(
   } catch {
     return null;
   }
+}
+
+export async function deleteAllEntries(supabase: SupabaseClient): Promise<number> {
+  const { data, error } = await supabase
+    .from("entries")
+    .delete()
+    .is("deleted_at", null)
+    .select("id");
+
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
 }
 
 export async function listTags(supabase: SupabaseClient): Promise<{ id: string; name: string }[]> {

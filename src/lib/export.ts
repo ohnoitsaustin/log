@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import type { DecryptedEntry } from "@/lib/entries";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createEntry, type EntryBlob } from "@/lib/entries";
+import { listActivities, createActivity } from "@/lib/activities";
 
 /* ── helpers ───────────────────────────────────────── */
 
@@ -131,13 +132,132 @@ export function parseImportCSV(raw: string): EntryBlob[] {
   });
 }
 
+export interface ImportEntry {
+  blob: EntryBlob;
+  createdAt?: string;
+}
+
+const DAYLIO_MOOD_MAP: Record<string, number> = {
+  awful: 1,
+  bad: 2,
+  meh: 3,
+  good: 4,
+  rad: 6,
+};
+
+/** Parse a CSV row respecting quoted fields */
+function parseCSVRow(line: string): string[] {
+  const fields: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else if (ch === '"') {
+        inQuotes = false;
+      } else {
+        current += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ",") {
+        fields.push(current);
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+  }
+  fields.push(current);
+  return fields;
+}
+
+export function parseDaylioCSV(raw: string): ImportEntry[] {
+  const lines = raw.trim().split("\n");
+  if (lines.length < 2) throw new Error("CSV must contain at least a header and one data row.");
+
+  const headers = parseCSVRow(lines[0]).map((h) => h.trim().toLowerCase());
+
+  const dateIdx = headers.indexOf("full_date");
+  const timeIdx = headers.indexOf("time");
+  const moodIdx = headers.indexOf("mood");
+  const activitiesIdx = headers.indexOf("activities");
+  const noteIdx = headers.indexOf("note");
+
+  if (dateIdx === -1) throw new Error('Daylio CSV must contain a "full_date" column.');
+
+  return lines.slice(1).filter((l) => l.trim()).map((line) => {
+    const fields = parseCSVRow(line);
+
+    const dateStr = fields[dateIdx]?.trim();
+    const timeStr = timeIdx >= 0 ? fields[timeIdx]?.trim() : "";
+    const moodStr = moodIdx >= 0 ? fields[moodIdx]?.trim().toLowerCase() : "";
+    const activitiesStr = activitiesIdx >= 0 ? fields[activitiesIdx]?.trim() : "";
+    const note = noteIdx >= 0 ? fields[noteIdx]?.trim() : "";
+
+    // Parse date + time into ISO string
+    let createdAt: string | undefined;
+    if (dateStr) {
+      const timePart = timeStr || "12:00 PM";
+      const d = new Date(`${dateStr} ${timePart}`);
+      if (!isNaN(d.getTime())) {
+        createdAt = d.toISOString();
+      }
+    }
+
+    const mood = DAYLIO_MOOD_MAP[moodStr] ?? null;
+
+    const activities = activitiesStr
+      ? activitiesStr
+          .split("|")
+          .flatMap((s) => s.split(","))
+          .map((a) => a.trim().toLowerCase())
+          .filter(Boolean)
+      : [];
+
+    return {
+      blob: {
+        body: note,
+        mood,
+        tags: [],
+        activities,
+      },
+      createdAt,
+    };
+  });
+}
+
 export async function importEntries(
   supabase: SupabaseClient,
   key: CryptoKey,
   userId: string,
-  blobs: EntryBlob[],
+  entries: ImportEntry[],
 ) {
-  for (const blob of blobs) {
-    await createEntry(supabase, key, userId, blob);
+  // Collect all unique activity names from the import
+  const importedNames = new Set<string>();
+  for (const entry of entries) {
+    for (const name of entry.blob.activities) {
+      if (name) importedNames.add(name);
+    }
+  }
+
+  // Find which activities already exist and create missing ones
+  if (importedNames.size > 0) {
+    const existing = await listActivities(supabase);
+    const existingNames = new Set(existing.map((a) => a.name));
+
+    for (const name of importedNames) {
+      if (!existingNames.has(name)) {
+        await createActivity(supabase, userId, name, "\u2753");
+      }
+    }
+  }
+
+  for (const entry of entries) {
+    await createEntry(supabase, key, userId, entry.blob, entry.createdAt);
   }
 }

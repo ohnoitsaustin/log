@@ -55,6 +55,23 @@ export async function createActivity(
   return data;
 }
 
+export async function updateActivity(
+  supabase: SupabaseClient,
+  id: string,
+  name: string,
+  emoji: string,
+): Promise<Activity | null> {
+  const { data, error } = await supabase
+    .from("activities")
+    .update({ name: name.trim().toLowerCase(), emoji })
+    .eq("id", id)
+    .select("id, name, emoji")
+    .single();
+
+  if (error || !data) return null;
+  return data;
+}
+
 export async function deleteActivity(supabase: SupabaseClient, id: string): Promise<void> {
   await supabase.from("activities").delete().eq("id", id);
 }

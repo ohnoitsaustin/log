@@ -5,8 +5,8 @@ import { useTheme } from "@/components/theme-provider";
 import { SignOutButton } from "@/components/sign-out-button";
 import { createClient } from "@/lib/supabase/client";
 import { useKey } from "@/components/key-provider";
-import { listEntries } from "@/lib/entries";
-import { exportAsJSON, exportAsMarkdownZip, parseImportJSON, importEntries } from "@/lib/export";
+import { listEntries, deleteAllEntries } from "@/lib/entries";
+import { exportAsJSON, exportAsMarkdownZip, parseImportJSON, parseDaylioCSV, importEntries, type ImportEntry } from "@/lib/export";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -16,6 +16,9 @@ export default function SettingsPage() {
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleExportJSON() {
@@ -34,6 +37,20 @@ export default function SettingsPage() {
     setExporting(false);
   }
 
+  async function handleDeleteAll() {
+    setDeleting(true);
+    setDeleteStatus(null);
+    try {
+      const count = await deleteAllEntries(supabase);
+      setDeleteStatus(`Deleted ${count} entries.`);
+    } catch (err) {
+      setDeleteStatus(err instanceof Error ? err.message : "Delete failed.");
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  }
+
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !key) return;
@@ -43,15 +60,21 @@ export default function SettingsPage() {
 
     try {
       const raw = await file.text();
-      const blobs = parseImportJSON(raw);
+      let entries: ImportEntry[];
+
+      if (file.name.endsWith(".csv")) {
+        entries = parseDaylioCSV(raw);
+      } else {
+        entries = parseImportJSON(raw).map((blob) => ({ blob }));
+      }
 
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      await importEntries(supabase, key, user.id, blobs);
-      setImportStatus(`Imported ${blobs.length} entries.`);
+      await importEntries(supabase, key, user.id, entries);
+      setImportStatus(`Imported ${entries.length} entries.`);
     } catch (err) {
       setImportStatus(err instanceof Error ? err.message : "Import failed.");
     } finally {
@@ -107,20 +130,56 @@ export default function SettingsPage() {
         <div className="border-foreground/10 border-t pt-6">
           <h2 className="text-foreground text-sm font-medium">Import</h2>
           <p className="text-foreground/40 mt-1 text-xs">
-            Import entries from a JSON file. Expected format: an array of objects with "body",
-            optional "mood" (1-5), and optional "tags" (string array).
+            Import entries from a JSON file or a Daylio CSV export. Daylio moods and activities are
+            mapped automatically.
           </p>
           <div className="mt-3">
             <input
               ref={fileRef}
               type="file"
-              accept=".json"
+              accept=".json,.csv"
               onChange={handleImport}
               disabled={importing}
               className="text-foreground/60 file:border-foreground/20 file:text-foreground hover:file:bg-foreground/5 text-sm file:mr-3 file:rounded-md file:border file:bg-transparent file:px-3 file:py-1.5 file:text-sm file:transition-colors"
             />
             {importing && <p className="text-foreground/40 mt-2 text-xs">Importing...</p>}
             {importStatus && <p className="text-foreground/60 mt-2 text-xs">{importStatus}</p>}
+          </div>
+        </div>
+
+        <div className="border-foreground/10 border-t pt-6">
+          <h2 className="text-foreground text-sm font-medium">Danger Zone</h2>
+          <p className="text-foreground/40 mt-1 text-xs">
+            Permanently delete all your entries. This cannot be undone.
+          </p>
+          <div className="mt-3">
+            {confirmDelete ? (
+              <div className="flex items-center gap-3">
+                <span className="text-foreground/60 text-sm">Are you sure?</span>
+                <button
+                  onClick={handleDeleteAll}
+                  disabled={deleting}
+                  className="rounded-md border border-red-500/50 px-3 py-1.5 text-sm text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+                >
+                  {deleting ? "Deleting..." : "Yes, delete all"}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={deleting}
+                  className="text-foreground/40 hover:text-foreground text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="rounded-md border border-red-500/50 px-3 py-1.5 text-sm text-red-500 transition-colors hover:bg-red-500/10"
+              >
+                Delete all entries
+              </button>
+            )}
+            {deleteStatus && <p className="text-foreground/60 mt-2 text-xs">{deleteStatus}</p>}
           </div>
         </div>
 
