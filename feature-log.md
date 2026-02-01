@@ -67,3 +67,19 @@ Running log of what was built, when, and any decisions made along the way.
 - **Crypto tests** — encrypt/decrypt round-trip, wrong-key rejection, unicode handling, empty string, unique IVs, key-check verify/reject (9 tests).
 - **Export tests** — import JSON parsing: valid input, optional fields, non-string tag filtering, error cases (8 tests).
 - Renamed `TODO.md` → `todo.md` and `README.md` → `readme.md`. Updated readme with project docs, todo with M0/M1 completion status.
+
+---
+
+## 2026-01-31 — Playwright + Integration Tests
+
+### What shipped
+- **Playwright smoke tests** — 4 tests covering landing page, unauthenticated redirect, sign-in page, and sign-up page. Runs against dev server with configurable `TEST_PORT` (default 3002).
+- **Integration tests** — `entries.integration.test.ts` exercises create → list → getEntry round-trip against a real Supabase instance. Verifies tag filtering. Cleans up test entries in `afterAll`. Gracefully skips when `TEST_USER_*` env vars are missing.
+- **E2E entry-flow test** — full sign-in → unlock passphrase → create entry → verify on timeline → view detail → export JSON. Also skips without credentials.
+- **Vitest integration config** — separate `vitest.integration.config.ts` that loads `.env.local` vars via Vite's `loadEnv`.
+- **Test scripts** — `test:integration` and `test:e2e` npm scripts added.
+- Updated `.env.local.example` with `TEST_USER_EMAIL`, `TEST_USER_PASSWORD`, `TEST_USER_PASSPHRASE`.
+
+### Issues hit
+- Vitest picked up Playwright `e2e/*.spec.ts` files and crashed on `@playwright/test` imports. Fixed by adding `"e2e/**"` to vitest exclude.
+- Dev server port conflicts — ports 3000 and 3001 occupied by other apps. Made Playwright config use `TEST_PORT` env var defaulting to 3002.

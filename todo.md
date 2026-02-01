@@ -60,7 +60,7 @@
 
 - [x] ESLint + Prettier configured and passing
 - [x] CI pipeline: GitHub Actions — lint, type-check, test, build
-- [ ] Playwright or Cypress stub for smoke test *(deferred)*
+- [x] Playwright smoke tests (landing, auth redirect, sign-in, sign-up)
 
 #### Security Notes
 
@@ -117,8 +117,8 @@
 
 - [x] Unit tests: crypto round-trip (encrypt → decrypt = original)
 - [x] Unit tests: export/import JSON parsing
-- [ ] Integration test: create entry → list → read back → matches *(deferred)*
-- [ ] E2E test: full create → list → export flow *(deferred)*
+- [x] Integration test: create entry → list → read back → matches (skips without test credentials)
+- [x] E2E test: full create → list → export flow (skips without test credentials)
 
 #### Security Notes
 
