@@ -6,6 +6,8 @@
  * - All operations use the Web Crypto API (no external deps).
  */
 
+import { toArrayBuffer, toArrayBufferU8 } from "./crypto-utils";
+
 const PBKDF2_ITERATIONS = 600_000;
 const SALT_LENGTH = 16; // 128 bits
 const IV_LENGTH = 12; // 96 bits (recommended for AES-GCM)
@@ -32,7 +34,7 @@ export async function deriveKey(passphrase: string, salt: Uint8Array): Promise<C
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt,
+      salt: toArrayBuffer(salt),
       iterations: PBKDF2_ITERATIONS,
       hash: "SHA-256",
     },
@@ -43,16 +45,21 @@ export async function deriveKey(passphrase: string, salt: Uint8Array): Promise<C
   );
 }
 
+
 export async function encrypt(
   key: CryptoKey,
   plaintext: string,
 ): Promise<{ ciphertext: Uint8Array; iv: Uint8Array }> {
   const encoder = new TextEncoder();
   const iv = generateIV();
-  const ciphertext = new Uint8Array(
-    await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoder.encode(plaintext)),
+
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: toArrayBuffer(iv) },  // <- ArrayBuffer
+    key,
+    encoder.encode(plaintext),
   );
-  return { ciphertext, iv };
+
+  return { ciphertext: new Uint8Array(encrypted), iv };
 }
 
 export async function decrypt(
@@ -61,9 +68,17 @@ export async function decrypt(
   iv: Uint8Array,
 ): Promise<string> {
   const decoder = new TextDecoder();
-  const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+
+  const plaintext = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: toArrayBuffer(iv) },      // <- ArrayBuffer
+    key,
+    toArrayBuffer(ciphertext),                       // <- ArrayBuffer
+  );
+
   return decoder.decode(plaintext);
 }
+
+
 
 /**
  * Create a key-check blob: encrypts a known string so we can later

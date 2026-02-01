@@ -29,3 +29,16 @@ export function fromHex(hex: string): Uint8Array {
   }
   return bytes;
 }
+
+/** Convert Uint8Array to a real ArrayBuffer-backed Uint8Array. */
+export function toArrayBufferU8(u8: Uint8Array): Uint8Array {
+  // slice() returns a real ArrayBuffer (not SharedArrayBuffer)
+  const ab = u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer;
+  return new Uint8Array(ab);
+}
+
+export function toArrayBuffer(u8: Uint8Array): ArrayBuffer {
+  // Copy into a brand-new Uint8Array (guaranteed ArrayBuffer-backed at runtime)
+  const copy = new Uint8Array(u8);
+  return copy.buffer as ArrayBuffer;
+}
