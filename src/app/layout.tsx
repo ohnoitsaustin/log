@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Plog",
   description: "Personal Log",
+  icons: {
+    icon: '/log.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
