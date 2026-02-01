@@ -6,7 +6,7 @@
  * - All operations use the Web Crypto API (no external deps).
  */
 
-import { toArrayBuffer, toArrayBufferU8 } from "./crypto-utils";
+import { toArrayBuffer } from "./crypto-utils";
 
 const PBKDF2_ITERATIONS = 600_000;
 const SALT_LENGTH = 16; // 128 bits

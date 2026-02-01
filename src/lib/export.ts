@@ -28,6 +28,7 @@ interface ExportEntry {
   body: string;
   mood: number | null;
   tags: string[];
+  activities: string[];
 }
 
 function toExportEntries(entries: DecryptedEntry[]): ExportEntry[] {
@@ -36,6 +37,7 @@ function toExportEntries(entries: DecryptedEntry[]): ExportEntry[] {
     body: e.body,
     mood: e.mood,
     tags: e.tags,
+    activities: e.activities,
   }));
 }
 
@@ -59,6 +61,7 @@ export async function exportAsMarkdownZip(entries: DecryptedEntry[]) {
       `date: "${entry.created_at}"`,
       entry.mood !== null ? `mood: ${entry.mood}` : null,
       entry.tags.length > 0 ? `tags: [${entry.tags.map((t) => `"${t}"`).join(", ")}]` : null,
+      entry.activities.length > 0 ? `activities: [${entry.activities.map((a) => `"${a}"`).join(", ")}]` : null,
       "---",
     ]
       .filter(Boolean)
@@ -89,6 +92,9 @@ export function parseImportJSON(raw: string): EntryBlob[] {
       mood: typeof obj.mood === "number" ? obj.mood : null,
       tags: Array.isArray(obj.tags)
         ? obj.tags.filter((t): t is string => typeof t === "string")
+        : [],
+      activities: Array.isArray(obj.activities)
+        ? obj.activities.filter((a): a is string => typeof a === "string")
         : [],
     };
   });
