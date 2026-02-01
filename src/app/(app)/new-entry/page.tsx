@@ -20,10 +20,6 @@ export default function NewEntryPage() {
   const [error, setError] = useState<string | null>(null);
 
   async function handleSave() {
-    if (!body.trim()) {
-      setError("Write something before saving.");
-      return;
-    }
     if (!key) return;
 
     setSaving(true);
