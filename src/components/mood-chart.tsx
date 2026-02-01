@@ -14,6 +14,14 @@ const MOOD_EMOJIS: Record<number, string> = {
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+// 0 = grey, 1-2 = red, 3 = yellow, 4-6 = green
+function moodColor(y: number): string {
+  if (y <= 0) return "#999";
+  if (y <= 2) return "#ef4444";
+  if (y <= 3) return "#eab308";
+  return "#22c55e";
+}
+
 function MiniChart({
   label,
   points,
@@ -24,9 +32,10 @@ function MiniChart({
   if (points.length === 0) return null;
 
   const W = 300;
-  const H = 64;
+  const H = 80;
   const PX = 20;
-  const PY = 10;
+  const PY = 14;
+  const BOTTOM = 16; // space for labels
 
   function px(i: number) {
     if (points.length === 1) return W / 2;
@@ -34,7 +43,7 @@ function MiniChart({
   }
 
   function py(val: number) {
-    return PY + ((6 - val) / 6) * (H - PY * 2);
+    return PY + ((6 - val) / 6) * (H - PY - BOTTOM - PY);
   }
 
   const mapped = points.map((p, i) => ({ ...p, cx: px(i), cy: py(p.y) }));
@@ -42,8 +51,8 @@ function MiniChart({
   const linePath =
     mapped.length > 1
       ? mapped
-          .map((p, i) => `${i === 0 ? "M" : "L"} ${p.cx} ${p.cy}`)
-          .join(" ")
+        .map((p, i) => `${i === 0 ? "M" : "L"} ${p.cx} ${p.cy}`)
+        .join(" ")
       : null;
 
   return (
@@ -51,7 +60,7 @@ function MiniChart({
       <div className="mb-0.5 text-[10px] font-semibold text-foreground/40">
         {label}
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 56 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 72 }}>
         {linePath && (
           <path
             d={linePath}
@@ -70,17 +79,23 @@ function MiniChart({
               y={p.cy}
               textAnchor="middle"
               dominantBaseline="central"
-              fontSize={12}
+              fontSize={24}
             >
               {p.emoji}
             </text>
+            <circle
+              cx={p.cx}
+              cy={p.cy + 16}
+              r={4}
+              fill={moodColor(p.y)}
+            />
             <text
               x={p.cx}
               y={H - 1}
               textAnchor="middle"
-              fontSize={7}
+              fontSize={10}
               fill="currentColor"
-              fillOpacity={0.25}
+              fillOpacity={0.4}
             >
               {p.sublabel}
             </text>
@@ -116,31 +131,32 @@ export function MoodChart({ entries }: { entries: DecryptedEntry[] }) {
     }));
 
   // Week: average mood per day for the last 7 days
-  const weekStart = new Date(now);
-  weekStart.setDate(weekStart.getDate() - 6);
-  weekStart.setHours(0, 0, 0, 0);
+  const last7: string[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    last7.push(d.toLocaleDateString("en-US"));
+  }
 
-  const byDay = new Map<number, number[]>();
+  const byDay = new Map<string, number[]>();
   for (const e of entries) {
     if (e.mood === null) continue;
-    const d = new Date(e.created_at);
-    if (d < weekStart) continue;
-    const dayKey = d.getDay() + d.toLocaleDateString("en-US").length * 10; // unique per calendar day
-    const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-    if (!byDay.has(dateOnly)) byDay.set(dateOnly, []);
-    byDay.get(dateOnly)!.push(e.mood);
+    const key = new Date(e.created_at).toLocaleDateString("en-US");
+    if (!last7.includes(key)) continue;
+    if (!byDay.has(key)) byDay.set(key, []);
+    byDay.get(key)!.push(e.mood);
   }
 
   const weekPoints: { emoji: string; y: number; sublabel: string }[] = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-    const moods = byDay.get(dateOnly);
+    const key = d.toLocaleDateString("en-US");
+    const moods = byDay.get(key);
     if (moods && moods.length > 0) {
-      const avg = Math.round(moods.reduce((a, b) => a + b, 0) / moods.length);
+      const avg = moods.reduce((a, b) => a + b, 0) / moods.length;
       weekPoints.push({
-        emoji: MOOD_EMOJIS[avg] ?? "",
+        emoji: MOOD_EMOJIS[Math.round(avg)] ?? "",
         y: avg,
         sublabel: DAY_LABELS[d.getDay()],
       });
