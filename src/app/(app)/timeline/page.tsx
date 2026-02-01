@@ -8,6 +8,7 @@ import { listEntries, listTags, type DecryptedEntry } from "@/lib/entries";
 import { listActivities, type Activity } from "@/lib/activities";
 import { getDrinkCounts } from "@/lib/drinks";
 import { EntryCard } from "@/components/entry-card";
+import { MoodChart } from "@/components/mood-chart";
 import { EntryListSkeleton } from "@/components/loading-skeleton";
 import { EmptyState } from "@/components/empty-state";
 import Link from "next/link";
@@ -106,6 +107,7 @@ export default function TimelinePage() {
           />
         ) : (
           <div className="space-y-3">
+            <MoodChart entries={entries} />
 
             {entries.map((entry, index) => {
               const isFirstOfDay =
