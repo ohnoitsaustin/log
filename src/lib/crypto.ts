@@ -40,7 +40,18 @@ export async function deriveKey(passphrase: string, salt: Uint8Array): Promise<C
     },
     keyMaterial,
     { name: "AES-GCM", length: 256 },
-    false,
+    true,
+    ["encrypt", "decrypt"],
+  );
+}
+
+/** Import an AES-GCM key from raw bytes (used to restore from session cache). */
+export async function importKeyFromRaw(raw: Uint8Array): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    "raw",
+    toArrayBuffer(raw),
+    { name: "AES-GCM", length: 256 },
+    true,
     ["encrypt", "decrypt"],
   );
 }

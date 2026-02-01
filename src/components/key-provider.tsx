@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { createKeyCheck, deriveKey, verifyPassphrase } from "@/lib/crypto";
-import { toHex, fromHex } from "@/lib/crypto-utils";
+import { createKeyCheck, deriveKey, importKeyFromRaw, verifyPassphrase } from "@/lib/crypto";
+import { toBase64, fromBase64, toHex, fromHex } from "@/lib/crypto-utils";
 
 interface KeyContextValue {
   key: CryptoKey | null;
@@ -13,6 +13,39 @@ interface KeyContextValue {
 }
 
 const KeyContext = createContext<KeyContextValue | undefined>(undefined);
+
+const SESSION_KEY_STORAGE = "log_session_key";
+const SESSION_SALT_STORAGE = "log_session_salt";
+
+async function cacheKeyToSession(key: CryptoKey, salt: Uint8Array) {
+  try {
+    const raw = await crypto.subtle.exportKey("raw", key);
+    sessionStorage.setItem(SESSION_KEY_STORAGE, toBase64(new Uint8Array(raw)));
+    sessionStorage.setItem(SESSION_SALT_STORAGE, toBase64(salt));
+  } catch {
+    // Silently ignore — caching is best-effort
+  }
+}
+
+async function restoreKeyFromSession(): Promise<{ key: CryptoKey; salt: Uint8Array } | null> {
+  try {
+    const rawB64 = sessionStorage.getItem(SESSION_KEY_STORAGE);
+    const saltB64 = sessionStorage.getItem(SESSION_SALT_STORAGE);
+    if (!rawB64 || !saltB64) return null;
+
+    const key = await importKeyFromRaw(fromBase64(rawB64));
+    const salt = fromBase64(saltB64);
+    return { key, salt };
+  } catch {
+    clearSessionCache();
+    return null;
+  }
+}
+
+function clearSessionCache() {
+  sessionStorage.removeItem(SESSION_KEY_STORAGE);
+  sessionStorage.removeItem(SESSION_SALT_STORAGE);
+}
 
 type Status = "loading" | "setup" | "unlock" | "unlocked";
 
@@ -32,6 +65,15 @@ export function KeyProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function checkKeyExists() {
+      // Try restoring from session cache first
+      const cached = await restoreKeyFromSession();
+      if (cached) {
+        setKey(cached.key);
+        setSalt(cached.salt);
+        setStatus("unlocked");
+        return;
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -57,6 +99,7 @@ export function KeyProvider({ children }: { children: React.ReactNode }) {
   function lock() {
     setKey(null);
     setSalt(null);
+    clearSessionCache();
     setStatus("unlock");
   }
 
@@ -75,6 +118,7 @@ export function KeyProvider({ children }: { children: React.ReactNode }) {
         onComplete={(k, s) => {
           setKey(k);
           setSalt(s);
+          cacheKeyToSession(k, s);
           setStatus("unlocked");
         }}
       />
@@ -88,6 +132,7 @@ export function KeyProvider({ children }: { children: React.ReactNode }) {
         onUnlock={(k, s) => {
           setKey(k);
           setSalt(s);
+          cacheKeyToSession(k, s);
           setStatus("unlocked");
         }}
       />
