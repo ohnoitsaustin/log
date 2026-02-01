@@ -113,6 +113,22 @@ export default function EntryDetailPage() {
           </div>
         )}
       </div>
+      <div className="mt-6 flex gap-2">
+        <button
+          onClick={async () => {
+            if (confirm("Are you sure you want to delete this entry?")) {
+              await supabase
+                .from("entries")
+                .delete()
+                .eq("id", id);
+              router.push("/timeline");
+            }
+          }}
+          className="px-3 py-1.5 text-sm rounded bg-red-950 text-red-50 hover:bg-red-900 transition-colors"
+        >
+          Delete Entry
+        </button>
+      </div>
     </div>
   );
 }
