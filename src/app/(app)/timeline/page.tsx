@@ -97,9 +97,58 @@ export default function TimelinePage() {
           />
         ) : (
           <div className="space-y-3">
-            {entries.map((entry) => (
-              <EntryCard key={entry.id} entry={entry} />
-            ))}
+
+            {entries.map((entry, index) => {
+              const isFirstOfDay =
+                index === 0 ||
+                new Date(entry.created_at).toLocaleDateString("en-US") !==
+                new Date(entries[index - 1].created_at).toLocaleDateString("en-US");
+              const isFirstOfMonth =
+                index === 0 ||
+                new Date(entry.created_at).getMonth() !==
+                new Date(entries[index - 1].created_at).getMonth();
+              const isFirstOfYear =
+                index === 0 ||
+                new Date(entry.created_at).getFullYear() !==
+                new Date(entries[index - 1].created_at).getFullYear();
+
+
+              function getSuffix(day: number): string {
+                if (day > 3 && day < 21) return 'th'; // Catch 11th-13th
+                switch (day % 10) {
+                  case 1: return 'st';
+                  case 2: return 'nd';
+                  case 3: return 'rd';
+                  default: return 'th';
+                }
+              }
+              return (
+                <div key={entry.id}>
+                  {isFirstOfYear && (
+                    <div className="text-sm font-semibold text-foreground/70 mb-2 mt-4">
+                      {new Date(entry.created_at).toLocaleDateString("en-US", {
+                        year: "numeric",
+                      })}
+                    </div>
+                  )}
+                  {isFirstOfMonth && (
+                    <div className="text-sm font-semibold text-foreground/70 mb-2 mt-4">
+                      {new Date(entry.created_at).toLocaleDateString("en-US", {
+                        month: "long",
+                      })}
+                    </div>
+                  )}
+                  {isFirstOfDay && (
+                    <div className="text-xs font-semibold text-foreground/50 mb-2 mt-4">
+                      {new Date(entry.created_at).toLocaleDateString("en-US", {
+                        weekday: "long",
+                      })} the {new Date(entry.created_at).getDate()}{getSuffix(new Date(entry.created_at).getDate())}
+                    </div>
+                  )}
+                  <EntryCard entry={entry} />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

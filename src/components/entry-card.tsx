@@ -12,11 +12,7 @@ export function EntryCard({ entry }: { entry: DecryptedEntry }) {
     >
       <div className="flex items-center justify-between">
         <time className="text-foreground/40 text-xs">
-          {new Date(entry.created_at).toLocaleDateString(undefined, {
-            weekday: "short",
-            year: "numeric",
-            month: "short",
-            day: "numeric",
+          {new Date(entry.created_at).toLocaleTimeString(undefined, {
             hour: "numeric",
             minute: "2-digit",
           })}
