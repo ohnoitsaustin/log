@@ -17,8 +17,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Plog",
   description: "Personal Log",
+  manifest: "/manifest.json",
+  themeColor: "#ffffff",
   icons: {
     icon: '/log.svg',
+    apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Plog",
   },
 };
 
