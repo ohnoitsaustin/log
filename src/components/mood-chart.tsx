@@ -60,7 +60,7 @@ function MiniChart({
       <div className="mb-0.5 text-[10px] font-semibold text-foreground/40">
         {label}
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 72 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
         {linePath && (
           <path
             d={linePath}
@@ -79,21 +79,21 @@ function MiniChart({
               y={p.cy}
               textAnchor="middle"
               dominantBaseline="central"
-              fontSize={24}
+              fontSize={18}
             >
               {p.emoji}
             </text>
             <circle
               cx={p.cx}
               cy={p.cy + 16}
-              r={4}
+              r={3}
               fill={moodColor(p.y)}
             />
             <text
               x={p.cx}
               y={H - 1}
               textAnchor="middle"
-              fontSize={10}
+              fontSize={8}
               fill="currentColor"
               fillOpacity={0.4}
             >
@@ -108,13 +108,13 @@ function MiniChart({
 
 export function MoodChart({ entries }: { entries: DecryptedEntry[] }) {
   const now = new Date();
-  const todayStr = now.toLocaleDateString("en-US");
+  const past24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-  // Today's entries with mood
-  const todayPoints = entries
+  // Last 24 hours entries with mood
+  const recentPoints = entries
     .filter(
       (e) =>
-        new Date(e.created_at).toLocaleDateString("en-US") === todayStr &&
+        new Date(e.created_at) >= past24h &&
         e.mood !== null
     )
     .sort(
@@ -130,25 +130,25 @@ export function MoodChart({ entries }: { entries: DecryptedEntry[] }) {
       }),
     }));
 
-  // Week: average mood per day for the last 7 days
-  const last7: string[] = [];
-  for (let i = 6; i >= 0; i--) {
+  // Last 10 days: average mood per day
+  const last10: string[] = [];
+  for (let i = 9; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    last7.push(d.toLocaleDateString("en-US"));
+    last10.push(d.toLocaleDateString("en-US"));
   }
 
   const byDay = new Map<string, number[]>();
   for (const e of entries) {
     if (e.mood === null) continue;
     const key = new Date(e.created_at).toLocaleDateString("en-US");
-    if (!last7.includes(key)) continue;
+    if (!last10.includes(key)) continue;
     if (!byDay.has(key)) byDay.set(key, []);
     byDay.get(key)!.push(e.mood);
   }
 
   const weekPoints: { emoji: string; y: number; sublabel: string }[] = [];
-  for (let i = 6; i >= 0; i--) {
+  for (let i = 9; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
     const key = d.toLocaleDateString("en-US");
@@ -168,16 +168,16 @@ export function MoodChart({ entries }: { entries: DecryptedEntry[] }) {
   // Filter out days with no mood for the line, but keep sublabels
   const hasWeekData = weekPoints.some((p) => p.y >= 0);
 
-  if (todayPoints.length === 0 && !hasWeekData) return null;
+  if (recentPoints.length === 0 && !hasWeekData) return null;
 
   return (
     <div className="mb-3 space-y-1">
-      {todayPoints.length > 0 && (
-        <MiniChart label="Today" points={todayPoints} />
+      {recentPoints.length > 0 && (
+        <MiniChart label="Last 24h" points={recentPoints} />
       )}
       {hasWeekData && (
         <MiniChart
-          label="This week"
+          label="Last 10 days"
           points={weekPoints.filter((p) => p.y >= 0)}
         />
       )}
