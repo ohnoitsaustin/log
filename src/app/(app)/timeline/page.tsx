@@ -106,7 +106,7 @@ export default function TimelinePage() {
             }
           />
         ) : (
-          <div className="space-y-3">
+          <div className="">
             <MoodChart entries={entries} />
 
             {entries.map((entry, index) => {
@@ -158,7 +158,7 @@ export default function TimelinePage() {
                         {d.toLocaleDateString("en-US", {
                           weekday: "long",
                         })} the {d.getDate()}{getSuffix(d.getDate())}
-                        {drinks > 0 && (
+                        {drinks != null && (
                           <span className="ml-2 text-foreground/30">
                             &middot; {drinks} {drinks === 1 ? "drink" : "drinks"}
                           </span>
