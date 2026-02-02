@@ -123,21 +123,6 @@ export default function NewEntryPage() {
 
       {!showFullForm ? (
         <div className="mt-6 space-y-4">
-          <label className="text-foreground/60 block text-sm font-medium">How you feelin'?</label>
-          <div className="flex gap-2">
-            {QUICK_MOODS.map((m) => (
-              <button
-                key={m.value}
-                onClick={() => handleQuickMood(m.value)}
-                disabled={savingMood !== null}
-                className={`rounded-lg p-2 text-2xl transition-all hover:bg-foreground/5 disabled:opacity-50 ${savingMood === m.value ? "bg-foreground/10 scale-110" : ""
-                  }`}
-              >
-                {m.emoji}
-              </button>
-            ))}
-          </div>
-
           {availableActivities.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {availableActivities.map((a) => {
@@ -154,11 +139,10 @@ export default function NewEntryPage() {
                       )
                     }
                     disabled={savingMood !== null}
-                    className={`rounded-full px-3 py-1 text-sm transition-colors disabled:opacity-50 ${
-                      selected
-                        ? "bg-foreground text-background"
-                        : "bg-foreground/10 text-foreground/60 hover:bg-foreground/20"
-                    }`}
+                    className={`rounded-full px-3 py-1 text-sm transition-colors disabled:opacity-50 ${selected
+                      ? "bg-foreground text-background"
+                      : "bg-foreground/10 text-foreground/60 hover:bg-foreground/20"
+                      }`}
                   >
                     {a.emoji} {a.name}
                   </button>
@@ -166,6 +150,22 @@ export default function NewEntryPage() {
               })}
             </div>
           )}
+          <label className="text-foreground/60 block text-sm font-medium mt-8">How you feelin'?</label>
+          <div className="flex gap-2">
+            {QUICK_MOODS.map((m) => (
+              <button
+                key={m.value}
+                onClick={() => handleQuickMood(m.value)}
+                disabled={savingMood !== null}
+                className={`rounded-lg p-2 text-2xl transition-all hover:bg-foreground/5 disabled:opacity-50 ${savingMood === m.value ? "bg-foreground/10 scale-110" : ""
+                  }`}
+              >
+                {m.emoji}
+              </button>
+            ))}
+          </div>
+
+
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 
