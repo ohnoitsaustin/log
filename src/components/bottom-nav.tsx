@@ -75,13 +75,29 @@ const NAV_ITEMS = [
   },
 ];
 
-export function BottomNav() {
+export function BottomNav({ onNewEntry }: { onNewEntry: () => void }) {
   const pathname = usePathname();
 
   return (
     <nav className="border-foreground/10 bg-background fixed right-0 bottom-0 left-0 z-30 border-t md:hidden">
       <div className="flex items-center justify-around py-2">
         {NAV_ITEMS.map((item) => {
+          if (item.href === "/new-entry") {
+            return (
+              <button
+                key={item.href}
+                onClick={onNewEntry}
+                className={`flex flex-col items-center gap-1 px-3 py-1 text-xs transition-colors ${
+                  pathname.startsWith(item.href)
+                    ? "text-foreground"
+                    : "text-foreground/40 hover:text-foreground/70"
+                }`}
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            );
+          }
           const isActive = pathname.startsWith(item.href);
           return (
             <Link

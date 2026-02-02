@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export function Header() {
+export function Header({ onNewEntry }: { onNewEntry: () => void }) {
     return (
         <header className="bg-background border-b border-foreground/10 px-4 py-3 md:px-6 flex justify-between">
             <Link href="/timeline" className="flex items-center">
@@ -9,12 +9,12 @@ export function Header() {
                     Plog (your personal log)
                 </h1>
             </Link>
-            <Link
-                href="/new-entry"
+            <button
+                onClick={onNewEntry}
                 className="bg-foreground text-background rounded-md px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-90"
             >
                 New Entry
-            </Link>
+            </button>
         </header>
     )
 }

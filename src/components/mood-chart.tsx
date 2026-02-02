@@ -14,12 +14,18 @@ const MOOD_EMOJIS: Record<number, string> = {
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// 0 = grey, 1-2 = red, 3 = yellow, 4-6 = green
+const MOOD_COLORS: Record<number, string> = {
+  0: "#999",
+  1: "#ef4444",
+  2: "#f97316",
+  3: "#eab308",
+  4: "#84cc16",
+  5: "#22c55e",
+  6: "#10b981",
+};
+
 function moodColor(y: number): string {
-  if (y <= 0) return "#999";
-  if (y <= 2) return "#ef4444";
-  if (y <= 3) return "#eab308";
-  return "#22c55e";
+  return MOOD_COLORS[Math.round(y)] ?? "#999";
 }
 
 function MiniChart({

@@ -76,7 +76,7 @@ const NAV_ITEMS = [
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onNewEntry }: { onNewEntry: () => void }) {
   const pathname = usePathname();
 
   return (
@@ -88,6 +88,22 @@ export function Sidebar() {
 
         <nav className="flex-1 space-y-1 px-3">
           {NAV_ITEMS.map((item) => {
+            if (item.href === "/new-entry") {
+              return (
+                <button
+                  key={item.href}
+                  onClick={onNewEntry}
+                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    pathname.startsWith(item.href)
+                      ? "bg-foreground/10 text-foreground"
+                      : "text-foreground/60 hover:bg-foreground/5 hover:text-foreground"
+                  }`}
+                >
+                  {item.icon}
+                  {item.label}
+                </button>
+              );
+            }
             const isActive = pathname.startsWith(item.href);
             return (
               <Link
