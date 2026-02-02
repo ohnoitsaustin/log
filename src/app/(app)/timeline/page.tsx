@@ -122,7 +122,10 @@ export default function TimelinePage() {
                 index === 0 ||
                 new Date(entry.created_at).getFullYear() !==
                 new Date(entries[index - 1].created_at).getFullYear();
-
+              const isLastOfDay =
+                index === entries.length - 1 ||
+                new Date(entry.created_at).toLocaleDateString("en-US") !==
+                new Date(entries[index + 1].created_at).toLocaleDateString("en-US");
 
               function getSuffix(day: number): string {
                 if (day > 3 && day < 21) return 'th'; // Catch 11th-13th
@@ -166,7 +169,11 @@ export default function TimelinePage() {
                       </div>
                     );
                   })()}
-                  <EntryCard entry={entry} activities={activities} />
+                  <EntryCard
+                    entry={entry}
+                    activities={activities}
+                    isLast={isLastOfDay}
+                  />
                 </div>
               );
             })}
