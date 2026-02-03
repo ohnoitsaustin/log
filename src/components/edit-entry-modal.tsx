@@ -9,6 +9,7 @@ import { EnergyPicker } from "@/components/energy-picker";
 import { TagInput } from "@/components/tag-input";
 import { ActivityInput } from "@/components/activity-input";
 import { WeatherToggle } from "@/components/weather-toggle";
+import { LocationToggle } from "@/components/location-toggle";
 import { ImagePicker, type SelectedImage } from "@/components/image-picker";
 import {
   getMediaForEntry,
@@ -103,7 +104,7 @@ export function EditEntryModal({
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const blob: EntryBlob = { body: body.trim(), mood, energy, location: location.trim(), weather, tags, activities };
+      const blob: EntryBlob = { body: body.trim(), mood, energy, location, weather, tags, activities };
       await updateEntry(supabase, key, entry.id, user.id, blob);
 
       // Delete removed media
@@ -160,17 +161,7 @@ export function EditEntryModal({
             <EnergyPicker value={energy} onChange={setEnergy} />
           </div>
 
-          <div>
-            <label className="text-foreground/60 mb-2 block text-sm font-medium">Location</label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Where are you?"
-              className="border-foreground/20 bg-background text-foreground placeholder:text-foreground/40 focus:border-foreground/40 w-full rounded-md border px-3 py-2 text-sm focus:outline-none"
-            />
-          </div>
-
+          <LocationToggle value={location} onChange={setLocation} disabled={saving} />
           <WeatherToggle value={weather} onChange={setWeather} disabled={saving} />
 
           <div>

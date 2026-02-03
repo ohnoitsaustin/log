@@ -48,10 +48,31 @@ export async function GET(request: NextRequest) {
 
   const data = await res.json();
 
+  // Reverse geocode for city/state
+  let location = "";
+  try {
+    const geoUrl = `https://api.openweathermap.org/geo/1.0/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&limit=1&appid=${API_KEY}`;
+    const geoRes = await fetch(geoUrl);
+    if (geoRes.ok) {
+      const geoData = await geoRes.json();
+      if (geoData.length > 0) {
+        // Prefer the city name from the weather response (more reliable),
+        // fall back to reverse geocoding name
+        const city = data.name || geoData[0].name || "";
+        const state = geoData[0].state || "";
+        location = state ? `${city}, ${state}` : city;
+      }
+    }
+  } catch {
+    // Non-critical, fall back to weather API city name
+    if (data.name) location = data.name;
+  }
+
   return NextResponse.json({
     high: Math.round(data.main.temp_max),
     low: Math.round(data.main.temp_min),
     emoji: conditionToEmoji(data.weather[0].id),
     description: data.weather[0].description,
+    location,
   });
 }

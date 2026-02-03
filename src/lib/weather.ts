@@ -5,21 +5,26 @@ export interface WeatherData {
   description: string;
 }
 
-const WEATHER_CACHE_KEY = "weather_cache";
-const WEATHER_CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
+export interface ContextData {
+  weather: WeatherData;
+  location: string;
+}
 
-interface WeatherCache {
-  data: WeatherData;
+const CONTEXT_CACHE_KEY = "context_cache";
+const CONTEXT_CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
+
+interface ContextCache {
+  data: ContextData;
   timestamp: number;
 }
 
-function getCachedWeather(): WeatherData | null {
+function getCachedContext(): ContextData | null {
   try {
-    const raw = localStorage.getItem(WEATHER_CACHE_KEY);
+    const raw = localStorage.getItem(CONTEXT_CACHE_KEY);
     if (!raw) return null;
-    const cache: WeatherCache = JSON.parse(raw);
-    if (Date.now() - cache.timestamp > WEATHER_CACHE_TTL) {
-      localStorage.removeItem(WEATHER_CACHE_KEY);
+    const cache: ContextCache = JSON.parse(raw);
+    if (Date.now() - cache.timestamp > CONTEXT_CACHE_TTL) {
+      localStorage.removeItem(CONTEXT_CACHE_KEY);
       return null;
     }
     return cache.data;
@@ -28,17 +33,17 @@ function getCachedWeather(): WeatherData | null {
   }
 }
 
-function setCachedWeather(data: WeatherData) {
+function setCachedContext(data: ContextData) {
   try {
-    const cache: WeatherCache = { data, timestamp: Date.now() };
-    localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(cache));
+    const cache: ContextCache = { data, timestamp: Date.now() };
+    localStorage.setItem(CONTEXT_CACHE_KEY, JSON.stringify(cache));
   } catch {
     // Ignore storage errors
   }
 }
 
-export async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
-  const cached = getCachedWeather();
+export async function fetchContext(lat: number, lon: number): Promise<ContextData> {
+  const cached = getCachedContext();
   if (cached) return cached;
 
   const res = await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
@@ -46,9 +51,28 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherDat
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || "Failed to fetch weather");
   }
-  const data: WeatherData = await res.json();
-  setCachedWeather(data);
+  const raw = await res.json();
+  const data: ContextData = {
+    weather: {
+      high: raw.high,
+      low: raw.low,
+      emoji: raw.emoji,
+      description: raw.description,
+    },
+    location: raw.location || "",
+  };
+  setCachedContext(data);
   return data;
+}
+
+export async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
+  const ctx = await fetchContext(lat, lon);
+  return ctx.weather;
+}
+
+export async function fetchLocationName(lat: number, lon: number): Promise<string> {
+  const ctx = await fetchContext(lat, lon);
+  return ctx.location;
 }
 
 export function getLocation(): Promise<{ lat: number; lon: number }> {

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useKey } from "@/components/key-provider";
 import { createEntry } from "@/lib/entries";
 import { WeatherToggle } from "@/components/weather-toggle";
+import { LocationToggle } from "@/components/location-toggle";
 import type { WeatherData } from "@/lib/weather";
 import type { Activity } from "@/lib/activities";
 
@@ -32,6 +33,7 @@ export function QuickEntryModal({
   const backdropRef = useRef<HTMLDivElement>(null);
 
   const [quickActivities, setQuickActivities] = useState<string[]>([]);
+  const [location, setLocation] = useState("");
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [savingMood, setSavingMood] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export function QuickEntryModal({
         body: "",
         mood: moodValue,
         energy: null,
-        location: "",
+        location,
         weather,
         tags: [],
         activities: quickActivities,
@@ -85,6 +87,7 @@ export function QuickEntryModal({
         <h2 className="text-foreground text-xl font-semibold">New Entry</h2>
 
         <div className="mt-4 space-y-4">
+          <LocationToggle value={location} onChange={setLocation} disabled={savingMood !== null} />
           <WeatherToggle value={weather} onChange={setWeather} disabled={savingMood !== null} />
 
           {availableActivities.length > 0 && (
