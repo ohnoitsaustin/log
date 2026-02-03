@@ -55,6 +55,13 @@ export default function NewEntryPage() {
     loadActivities();
   }, [loadActivities]);
 
+  // Revoke preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleAddActivity(name: string, emoji: string) {
     const {
       data: { user },

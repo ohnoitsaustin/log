@@ -71,6 +71,11 @@ export function EditEntryModal({
         for (const m of prev) URL.revokeObjectURL(m.objectUrl);
         return [];
       });
+      // Revoke new image preview URLs
+      setNewImages((prev) => {
+        for (const img of prev) URL.revokeObjectURL(img.previewUrl);
+        return [];
+      });
     };
   }, [key, entry.id, supabase]);
 

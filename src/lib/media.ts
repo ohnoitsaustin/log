@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const MAX_DIMENSION = 2048;
 const JPEG_QUALITY = 0.85;
 const MAX_IMAGES_PER_ENTRY = 4;
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 
 export interface MediaRecord {
   id: string;
@@ -249,4 +250,4 @@ export async function deleteMediaByIds(
   }
 }
 
-export { MAX_IMAGES_PER_ENTRY };
+export { MAX_IMAGES_PER_ENTRY, MAX_FILE_SIZE };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import { MAX_IMAGES_PER_ENTRY } from "@/lib/media";
+import { MAX_IMAGES_PER_ENTRY, MAX_FILE_SIZE } from "@/lib/media";
 
 export interface SelectedImage {
   file: File;
@@ -21,12 +21,21 @@ export function ImagePicker({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [sizeError, setSizeError] = useState<string | null>(null);
 
   const addFiles = useCallback(
     (files: FileList | File[]) => {
       const fileArray = Array.from(files).filter((f) =>
         f.type.startsWith("image/"),
       );
+
+      const oversized = fileArray.filter((f) => f.size > MAX_FILE_SIZE);
+      if (oversized.length > 0) {
+        setSizeError(`${oversized.length} image${oversized.length > 1 ? "s" : ""} exceeded 20 MB limit`);
+        return;
+      }
+      setSizeError(null);
+
       const remaining = maxImages - images.length;
       const toAdd = fileArray.slice(0, remaining);
 
@@ -80,6 +89,10 @@ export function ImagePicker({
             </div>
           ))}
         </div>
+      )}
+
+      {sizeError && (
+        <p className="text-xs text-red-500">{sizeError}</p>
       )}
 
       {/* Drop zone / add button */}
