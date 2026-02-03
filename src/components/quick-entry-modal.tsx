@@ -7,6 +7,7 @@ import { useKey } from "@/components/key-provider";
 import { createEntry } from "@/lib/entries";
 import { WeatherToggle } from "@/components/weather-toggle";
 import { LocationToggle } from "@/components/location-toggle";
+import { EnergyPicker } from "@/components/energy-picker";
 import type { WeatherData } from "@/lib/weather";
 import type { Activity } from "@/lib/activities";
 
@@ -33,6 +34,7 @@ export function QuickEntryModal({
   const backdropRef = useRef<HTMLDivElement>(null);
 
   const [quickActivities, setQuickActivities] = useState<string[]>([]);
+  const [energy, setEnergy] = useState<number | null>(null);
   const [location, setLocation] = useState("");
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [savingMood, setSavingMood] = useState<number | null>(null);
@@ -61,7 +63,7 @@ export function QuickEntryModal({
       await createEntry(supabase, key, user.id, {
         body: "",
         mood: moodValue,
-        energy: null,
+        energy,
         location,
         weather,
         tags: [],
@@ -119,7 +121,12 @@ export function QuickEntryModal({
             </div>
           )}
 
-          <label className="text-foreground/60 block text-sm font-medium mt-8">
+          <div>
+            <label className="text-foreground/60 mb-2 block text-sm font-medium">Energy</label>
+            <EnergyPicker value={energy} onChange={setEnergy} />
+          </div>
+
+          <label className="text-foreground/60 block text-sm font-medium">
             How you feelin&apos;?
           </label>
           <div className="flex gap-2">
