@@ -143,45 +143,45 @@
 
 #### UI/UX
 
-- [ ] Image attachment on new entry (camera or file picker, up to 4 images)
-- [ ] Image thumbnails in timeline; full-size in detail view
-- [ ] Context fields: mood (emoji or 1-5 scale), energy (1-5), location (optional text), weather (optional text or auto)
-- [ ] Search bar: full-text search over decrypted entries (client-side index)
-- [ ] Advanced filter: date range, tags, mood range, has-image
-- [ ] Edit entry flow (decrypt → edit → re-encrypt → update)
-- [ ] Delete entry flow (soft-delete, with undo toast)
+- [x] Image attachment on new entry (camera or file picker, up to 4 images)
+- [x] Image thumbnails in timeline; full-size in detail view
+- [x] Context fields: mood (emoji or 1-5 scale), energy (1-5), location (auto via reverse geocoding), weather (auto via OpenWeatherMap)
+- [x] Search bar: full-text search over decrypted entries (client-side index)
+- [x] Advanced filter: date range, tags, mood range, has-image
+- [x] Edit entry flow (decrypt → edit → re-encrypt → update)
+- [x] Delete entry flow (soft-delete, with undo toast)
 
 #### Data Model & Storage
 
-- [ ] `media` table: `id`, `entry_id`, `user_id`, `storage_path`, `encrypted_key`, `mime_type`, `created_at`
-- [ ] Encrypted media blobs stored in Supabase Storage (or Cloudinary later)
-- [ ] Context fields: add `encrypted_context` column to `entries` or store in the encrypted blob
-- [ ] Client-side search index (e.g., MiniSearch or Fuse.js over decrypted entries cached in memory)
+- [x] `media` table: `id`, `entry_id`, `user_id`, `storage_path`, `encrypted_key`, `mime_type`, `created_at`
+- [x] Encrypted media blobs stored in Supabase Storage
+- [x] Context fields stored in the encrypted blob (mood, energy, location, weather, tags, activities)
+- [x] Client-side search index (Fuse.js over decrypted entries cached in memory)
 
 #### Encryption & Key Management
 
-- [ ] Encrypt images client-side before upload (chunked if large)
-- [ ] Decrypt images on demand for display (cache decrypted blob in memory / object URL)
-- [ ] Context fields encrypted inside the entry blob (not queryable server-side — by design)
+- [x] Encrypt images client-side before upload
+- [x] Decrypt images on demand for display (cache decrypted blob in memory / object URL)
+- [x] Context fields encrypted inside the entry blob (not queryable server-side — by design)
 
 #### Export/Import
 
-- [ ] Export includes media files in a `media/` folder inside the zip
+- [x] Export includes media files in a `media/` folder inside the zip
 - [ ] Markdown export embeds `![](media/filename.ext)` references
 - [ ] Import supports entries with media attachments
 
 #### Testing
 
-- [ ] Unit tests: image encrypt/decrypt round-trip
+- [x] Unit tests: image encrypt/decrypt round-trip
 - [ ] Integration test: create entry with image → read back → image displays
 - [ ] E2E test: search returns correct results
 - [ ] E2E test: export with media produces valid zip
 
 #### Security Notes
 
-- [ ] Image EXIF stripping before encryption (prevent location leaks)
-- [ ] Max upload size enforced client-side and via Supabase Storage policies
-- [ ] Object URLs revoked after use to prevent memory leaks
+- [x] Image EXIF stripping before encryption (canvas re-rendering strips EXIF)
+- [x] Max upload size enforced client-side (20 MB limit)
+- [x] Object URLs revoked after use to prevent memory leaks
 
 #### Definition of Done — M2
 
@@ -200,12 +200,15 @@
 
 #### UI/UX
 
-- [ ] **Insights** page: gentle trend cards ("You wrote 12 entries this month", "Most common tag: `work`")
-- [ ] Tag frequency chart (bar or word-cloud)
-- [ ] Mood/energy over time chart (line or scatter, smoothed)
-- [ ] "On this day" feature (entries from same date in past years)
+- [x] **Insights** page: gentle trend cards (total entries, this month, this week, avg mood)
+- [x] Tag frequency chart (horizontal bar chart)
+- [x] Mood/energy over time chart (line chart, last 30 days)
+- [x] "On this day" feature (entries from same date in past years)
 - [ ] Derived tag suggestions: after saving, suggest tags based on content (client-side NLP or simple keyword match)
-- [ ] All analytics computed client-side from decrypted data — nothing server-queryable
+- [x] All analytics computed client-side from decrypted data — nothing server-queryable
+- [x] Writing patterns: entries by day of week and hour of day
+- [x] Activity frequency chart
+- [x] Gentle observations (most active day, time of day, weekday vs weekend mood)
 
 #### Data Model & Storage
 
@@ -214,13 +217,13 @@
 
 #### Encryption & Key Management
 
-- [ ] No changes — analytics computed post-decryption in memory
-- [ ] Ensure no analytics data is persisted unencrypted (no localStorage plaintext caches)
+- [x] No changes — analytics computed post-decryption in memory
+- [x] No analytics data is persisted unencrypted
 
 #### Export/Import
 
 - [ ] Export includes derived tags in JSON output
-- [ ] Analytics data is not exported (it's computed, not stored)
+- [x] Analytics data is not exported (it's computed, not stored)
 
 #### Testing
 
@@ -231,8 +234,8 @@
 
 #### Security Notes
 
-- [ ] Confirm no plaintext summary data is cached in localStorage / sessionStorage
-- [ ] Client-side NLP model (if used) must not phone home
+- [x] No plaintext summary data cached in localStorage / sessionStorage
+- [x] No external NLP model — all computation local
 
 #### Definition of Done — M3
 
