@@ -7,6 +7,14 @@ import { updateEntry, type DecryptedEntry, type EntryBlob } from "@/lib/entries"
 import { MoodPicker } from "@/components/mood-picker";
 import { TagInput } from "@/components/tag-input";
 import { ActivityInput } from "@/components/activity-input";
+import { ImagePicker, type SelectedImage } from "@/components/image-picker";
+import {
+  getMediaForEntry,
+  uploadMedia,
+  deleteMediaByIds,
+  MAX_IMAGES_PER_ENTRY,
+  type DecryptedMedia,
+} from "@/lib/media";
 import type { Activity } from "@/lib/activities";
 
 export function EditEntryModal({
@@ -29,10 +37,36 @@ export function EditEntryModal({
   const [mood, setMood] = useState<number | null>(entry.mood);
   const [tags, setTags] = useState<string[]>(entry.tags);
   const [activities, setActivities] = useState<string[]>(entry.activities);
+  const [existingMedia, setExistingMedia] = useState<DecryptedMedia[]>([]);
+  const [removedMediaIds, setRemovedMediaIds] = useState<string[]>([]);
+  const [newImages, setNewImages] = useState<SelectedImage[]>([]);
+  const [loadingMedia, setLoadingMedia] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const backdropRef = useRef<HTMLDivElement>(null);
+
+  // Load existing media
+  useEffect(() => {
+    if (!key) return;
+
+    async function loadMedia() {
+      setLoadingMedia(true);
+      const media = await getMediaForEntry(supabase, key!, entry.id);
+      setExistingMedia(media);
+      setLoadingMedia(false);
+    }
+
+    loadMedia();
+
+    return () => {
+      // Revoke object URLs on unmount
+      setExistingMedia((prev) => {
+        for (const m of prev) URL.revokeObjectURL(m.objectUrl);
+        return [];
+      });
+    };
+  }, [key, entry.id, supabase]);
 
   useEffect(() => {
     function handleEscape(e: KeyboardEvent) {
@@ -41,6 +75,16 @@ export function EditEntryModal({
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [onClose]);
+
+  const visibleExisting = existingMedia.filter(
+    (m) => !removedMediaIds.includes(m.id),
+  );
+  const totalImages = visibleExisting.length + newImages.length;
+  const maxNewImages = MAX_IMAGES_PER_ENTRY - visibleExisting.length;
+
+  function handleRemoveExisting(mediaId: string) {
+    setRemovedMediaIds((prev) => [...prev, mediaId]);
+  }
 
   async function handleSave() {
     if (!key) return;
@@ -56,6 +100,22 @@ export function EditEntryModal({
 
       const blob: EntryBlob = { body: body.trim(), mood, tags, activities };
       await updateEntry(supabase, key, entry.id, user.id, blob);
+
+      // Delete removed media
+      if (removedMediaIds.length > 0) {
+        await deleteMediaByIds(supabase, removedMediaIds);
+      }
+
+      // Upload new images
+      for (const img of newImages) {
+        await uploadMedia(supabase, key, user.id, entry.id, img.file);
+      }
+
+      // Clean up preview URLs
+      for (const img of newImages) {
+        URL.revokeObjectURL(img.previewUrl);
+      }
+
       onSaved(blob);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save changes.");
@@ -103,6 +163,46 @@ export function EditEntryModal({
               availableActivities={availableActivities}
               onAddActivity={onAddActivity}
             />
+          </div>
+
+          <div>
+            <label className="text-foreground/60 mb-2 block text-sm font-medium">Images</label>
+
+            {/* Existing media */}
+            {loadingMedia ? (
+              <div className="text-foreground/30 text-sm">Loading images...</div>
+            ) : visibleExisting.length > 0 ? (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {visibleExisting.map((m) => (
+                  <div key={m.id} className="relative group">
+                    <img
+                      src={m.objectUrl}
+                      alt="Existing attachment"
+                      className="h-20 w-20 rounded-md object-cover border border-foreground/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExisting(m.id)}
+                      disabled={saving}
+                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                      aria-label="Remove image"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {/* New images picker */}
+            {totalImages < MAX_IMAGES_PER_ENTRY && (
+              <ImagePicker
+                images={newImages}
+                onChange={setNewImages}
+                maxImages={maxNewImages}
+                disabled={saving}
+              />
+            )}
           </div>
 
           {error && <p className="text-sm text-red-500">{error}</p>}

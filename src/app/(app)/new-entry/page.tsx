@@ -8,6 +8,8 @@ import { createEntry } from "@/lib/entries";
 import { MoodPicker } from "@/components/mood-picker";
 import { TagInput } from "@/components/tag-input";
 import { ActivityInput } from "@/components/activity-input";
+import { ImagePicker, type SelectedImage } from "@/components/image-picker";
+import { uploadMedia } from "@/lib/media";
 import {
   listActivities,
   seedDefaultActivities,
@@ -25,6 +27,7 @@ export default function NewEntryPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [activities, setActivities] = useState<string[]>([]);
   const [availableActivities, setAvailableActivities] = useState<Activity[]>([]);
+  const [images, setImages] = useState<SelectedImage[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,7 +74,18 @@ export default function NewEntryPage() {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      await createEntry(supabase, key, user.id, { body: body.trim(), mood, tags, activities });
+      const entryId = await createEntry(supabase, key, user.id, { body: body.trim(), mood, tags, activities });
+
+      // Upload images
+      for (const img of images) {
+        await uploadMedia(supabase, key, user.id, entryId, img.file);
+      }
+
+      // Clean up preview URLs
+      for (const img of images) {
+        URL.revokeObjectURL(img.previewUrl);
+      }
+
       router.push("/timeline");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save entry.");
@@ -113,6 +127,11 @@ export default function NewEntryPage() {
             availableActivities={availableActivities}
             onAddActivity={handleAddActivity}
           />
+        </div>
+
+        <div>
+          <label className="text-foreground/60 mb-2 block text-sm font-medium">Images</label>
+          <ImagePicker images={images} onChange={setImages} disabled={saving} />
         </div>
 
         {error && <p className="text-sm text-red-500">{error}</p>}

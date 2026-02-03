@@ -83,3 +83,69 @@ Running log of what was built, when, and any decisions made along the way.
 ### Issues hit
 - Vitest picked up Playwright `e2e/*.spec.ts` files and crashed on `@playwright/test` imports. Fixed by adding `"e2e/**"` to vitest exclude.
 - Dev server port conflicts — ports 3000 and 3001 occupied by other apps. Made Playwright config use `TEST_PORT` env var defaulting to 3002.
+
+---
+
+## 2026-02-01 — M1 Polish: Activities, Edit/Delete, Mood Chart, Quick Entry
+
+### What shipped
+- **Activities system** — `lib/activities.ts` with CRUD + 20 default activities seeded on first access. `activities` table with emoji + name per user. `ActivityInput` dropdown with multi-select and in-line "add new" feature.
+- **Edit entry** — `EditEntryModal` component. Decrypt → edit body/mood/tags/activities → re-encrypt → update. Escape/backdrop to close.
+- **Delete entry** — delete button on entry detail page with confirm dialog. Hard delete from DB.
+- **Mood chart** — `MoodChart` SVG component on timeline. 24-hour trend line + 10-day rolling average. Color-coded mood dots.
+- **Quick entry modal** — `QuickEntryModal` triggered by Cmd/Ctrl+N. Quick mood picker (7 emojis with color dots) + activity toggles. Creates entry with mood + activities, empty body. "Write full entry" button to go to full form.
+- **Timeline styling** — entries grouped by year > month > day with headers. Mood emoji in left gutter with connector lines. Day-of-week headers with ordinal suffixes ("Monday the 3rd").
+- **Drink count integration** — `lib/drinks.ts` fetches daily drink counts from external Neon DB. Displayed next to day headers in timeline.
+- **Session persistence** — encryption key cached in sessionStorage (raw key bytes), survives page reloads within a tab. Cleared on sign-out.
+- **Daylio CSV import** — parses Daylio export format, maps moods (awful→1, bad→2, meh→3, good→4, rad→6), splits activities by `|` or `,`, preserves timestamps.
+- **Header redesign** — top nav bar with logo and "New Entry" button.
+- **PWA support** — web app manifest, service worker registration, app icons. Installable on mobile/desktop.
+- **Entry limit removed** — timeline loads all entries (was capped at 50).
+- **Mood scale expanded** — 0-6 scale (added neutral 0 and excited 6) instead of original 1-5.
+- **Allow empty body** — entries can be mood/activity-only (no text required).
+
+### Decisions made
+- **Activities stored in encrypted blob** — activity names in the blob, definitions (name + emoji) in plaintext `activities` table for UI display.
+- **Hard delete** — no soft-delete for now, simpler UX. Soft-delete column exists in schema but unused.
+- **External drink tracking** — separate Neon Postgres DB, read-only integration. Not part of the encrypted journal data model.
+- **Session key caching** — acceptable trade-off for UX. Key is raw bytes in sessionStorage, scoped to tab. Cleared on sign-out.
+
+### Commits
+- `3dec985`..`b733ce2` — 25 commits covering activities, edit/delete, mood chart, quick entry, timeline styling, drink integration, PWA, Daylio import, and various fixes.
+
+---
+
+## 2026-02-03 — M2: Encrypted Image Attachments
+
+### What shipped
+- **Media library** — `lib/media.ts` with full image pipeline: EXIF stripping via OffscreenCanvas re-render, resize to max 2048px, JPEG compression (0.85 quality), AES-256-GCM encryption, upload to Supabase Storage (`encrypted-media` bucket), download + decrypt on demand, object URL lifecycle management.
+- **Image picker component** — `ImagePicker` with file input (accept `image/*`, up to 4), preview thumbnails, remove buttons, drag-and-drop support. Reused in both new entry and edit modal.
+- **New entry with images** — images selected in form, uploaded after entry creation. Each image processed → encrypted → uploaded separately with unique IV.
+- **Entry detail images** — fetches + decrypts media on load. Responsive grid (1-col for single image, 2-col for multiple). Click-to-lightbox overlay with full-size view. Object URLs revoked on unmount.
+- **Timeline media indicator** — image icon + count displayed on entry cards with attachments. Media counts fetched via single query (RLS-scoped, no `.in()` filter to avoid URL length limits).
+- **Edit entry with images** — loads existing decrypted images, allows removing existing and adding new (up to 4 total). Removed images deleted from storage + DB on save, new images uploaded.
+- **Export with media** — markdown zip export includes `media/` folder with decrypted JPEG files. Markdown entries reference images via `![](media/filename.jpg)`. Media decrypted on-the-fly during export.
+- **Delete cleanup** — deleting an entry also deletes associated media from Supabase Storage and the `media` table.
+
+### Decisions made
+- **EXIF stripping via canvas** — re-render through OffscreenCanvas strips all EXIF/GPS metadata with zero dependencies. Converts everything to JPEG.
+- **No separate thumbnails** — full images displayed at CSS-constrained sizes. Avoids storing two encrypted blobs per image. Acceptable for a personal journal with low image counts.
+- **RLS-scoped media count query** — instead of `.in(entry_id, [...uuids])` which hit Supabase's URL length limit (400 error with many entries), query all user media rows and count client-side. RLS ensures only the user's data is returned.
+- **Object URL lifecycle** — created on decrypt, revoked on component unmount or after export use. Prevents memory leaks.
+- **Sequential image upload** — images uploaded one at a time after entry creation. Parallel upload possible but sequential is simpler and avoids race conditions with the media table.
+
+### Issues hit
+- **Supabase `.in()` URL length limit** — the initial `getMediaCounts` used `.in("entry_id", entryIds)` which generated a GET URL with hundreds of UUIDs. Supabase/PostgREST returned 400 Bad Request. Fixed by querying all user media (RLS-scoped) instead.
+
+### Files added
+- `src/lib/media.ts` — media encryption/upload/download/delete library
+- `src/components/image-picker.tsx` — reusable image picker component
+
+### Files modified
+- `src/lib/entries.ts` — added `mediaCount` to `DecryptedEntry`, fetch counts in `listEntries`/`getEntry`
+- `src/components/entry-card.tsx` — image count indicator with SVG icon
+- `src/components/edit-entry-modal.tsx` — image management (view/add/remove existing)
+- `src/app/(app)/new-entry/page.tsx` — image picker + upload on save
+- `src/app/(app)/timeline/[id]/page.tsx` — image display, lightbox, media cleanup on delete
+- `src/lib/export.ts` — markdown zip includes media folder
+- `src/app/(app)/settings/page.tsx` — passes supabase/key to export for media

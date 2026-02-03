@@ -1,5 +1,6 @@
 import { encrypt, decrypt } from "@/lib/crypto";
 import { toHex, fromHex } from "@/lib/crypto-utils";
+import { getMediaCounts } from "@/lib/media";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface EntryBlob {
@@ -17,6 +18,7 @@ export interface DecryptedEntry {
   activities: string[];
   created_at: string;
   updated_at: string;
+  mediaCount: number;
 }
 
 export async function createEntry(
@@ -151,9 +153,18 @@ export async function listEntries(
         activities: blob.activities ?? [],
         created_at: row.created_at,
         updated_at: row.updated_at,
+        mediaCount: 0,
       });
     } catch {
       // Skip entries that fail to decrypt (shouldn't happen with correct key)
+    }
+  }
+
+  // Fetch media counts for all entries in one query
+  if (entries.length > 0) {
+    const counts = await getMediaCounts(supabase, entries.map((e) => e.id));
+    for (const entry of entries) {
+      entry.mediaCount = counts[entry.id] ?? 0;
     }
   }
 
@@ -177,6 +188,8 @@ export async function getEntry(
   try {
     const plaintext = await decrypt(key, fromHex(row.encrypted_blob), fromHex(row.iv));
     const blob: EntryBlob = JSON.parse(plaintext);
+    // Get media count for this entry
+    const counts = await getMediaCounts(supabase, [row.id]);
     return {
       id: row.id,
       body: blob.body,
@@ -185,6 +198,7 @@ export async function getEntry(
       activities: blob.activities,
       created_at: row.created_at,
       updated_at: row.updated_at,
+      mediaCount: counts[row.id] ?? 0,
     };
   } catch {
     return null;

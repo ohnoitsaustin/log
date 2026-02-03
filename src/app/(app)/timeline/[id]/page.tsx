@@ -8,6 +8,7 @@ import { getEntry, type DecryptedEntry } from "@/lib/entries";
 import { moodToEmoji } from "@/components/mood-picker";
 import { activityToEmoji } from "@/components/activity-input";
 import { listActivities, createActivity, type Activity } from "@/lib/activities";
+import { getMediaForEntry, deleteMediaForEntry, type DecryptedMedia } from "@/lib/media";
 import { EditEntryModal } from "@/components/edit-entry-modal";
 import { EntryCardSkeleton } from "@/components/loading-skeleton";
 import Link from "next/link";
@@ -20,9 +21,11 @@ export default function EntryDetailPage() {
 
   const [entry, setEntry] = useState<DecryptedEntry | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [media, setMedia] = useState<DecryptedMedia[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!key || !id) return;
@@ -36,6 +39,9 @@ export default function EntryDetailPage() {
       if (result) {
         setEntry(result);
         setActivities(activityList);
+        // Fetch and decrypt media
+        const mediaList = await getMediaForEntry(supabase, key!, id);
+        setMedia(mediaList);
       } else {
         setNotFound(true);
       }
@@ -43,6 +49,14 @@ export default function EntryDetailPage() {
     }
 
     load();
+
+    // Revoke object URLs on unmount
+    return () => {
+      setMedia((prev) => {
+        for (const m of prev) URL.revokeObjectURL(m.objectUrl);
+        return [];
+      });
+    };
   }, [key, id, supabase]);
 
   if (loading) {
@@ -108,6 +122,39 @@ export default function EntryDetailPage() {
           {entry.body}
         </div>
 
+        {media.length > 0 && (
+          <div className={`mt-4 grid gap-2 ${media.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+            {media.map((m, i) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setLightboxIndex(i)}
+                className="overflow-hidden rounded-md border border-foreground/10"
+              >
+                <img
+                  src={m.objectUrl}
+                  alt={`Attachment ${i + 1}`}
+                  className="w-full h-auto object-cover max-h-64"
+                />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {lightboxIndex !== null && media[lightboxIndex] && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
+            onClick={() => setLightboxIndex(null)}
+          >
+            <img
+              src={media[lightboxIndex].objectUrl}
+              alt={`Full size ${lightboxIndex + 1}`}
+              className="max-h-[90vh] max-w-full rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
+
         {entry.tags.length > 0 && (
           <div className="mt-6 flex flex-wrap gap-1.5">
             {entry.tags.map((tag) => (
@@ -146,6 +193,7 @@ export default function EntryDetailPage() {
         <button
           onClick={async () => {
             if (confirm("Are you sure you want to delete this entry?")) {
+              await deleteMediaForEntry(supabase, id);
               await supabase
                 .from("entries")
                 .delete()

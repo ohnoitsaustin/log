@@ -33,7 +33,7 @@ export default function SettingsPage() {
     if (!key) return;
     setExporting(true);
     const entries = await listEntries(supabase, key);
-    await exportAsMarkdownZip(entries);
+    await exportAsMarkdownZip(entries, supabase, key);
     setExporting(false);
   }
 

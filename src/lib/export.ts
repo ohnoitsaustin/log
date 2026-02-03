@@ -3,6 +3,7 @@ import type { DecryptedEntry } from "@/lib/entries";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createEntry, type EntryBlob } from "@/lib/entries";
 import { listActivities, createActivity } from "@/lib/activities";
+import { getMediaForEntry, type DecryptedMedia } from "@/lib/media";
 
 /* ── helpers ───────────────────────────────────────── */
 
@@ -48,14 +49,43 @@ export function exportAsJSON(entries: DecryptedEntry[]) {
   downloadString(json, "log-export.json", "application/json");
 }
 
-export async function exportAsMarkdownZip(entries: DecryptedEntry[]) {
+export async function exportAsMarkdownZip(
+  entries: DecryptedEntry[],
+  supabase?: SupabaseClient,
+  key?: CryptoKey,
+) {
   const zip = new JSZip();
+  const mediaFolder = zip.folder("media");
 
   for (const entry of entries) {
     const date = new Date(entry.created_at);
     const slug = date.toISOString().slice(0, 10);
     const time = date.toISOString().slice(11, 16);
     const filename = `${slug}-${time.replace(":", "")}.md`;
+
+    // Fetch and decrypt media for this entry
+    let mediaFiles: { name: string; data: DecryptedMedia }[] = [];
+    if (supabase && key && entry.mediaCount > 0) {
+      const decryptedMedia = await getMediaForEntry(supabase, key, entry.id);
+      mediaFiles = decryptedMedia.map((m, i) => ({
+        name: `${slug}-${time.replace(":", "")}-${i + 1}.jpg`,
+        data: m,
+      }));
+
+      // Add media files to zip
+      for (const mf of mediaFiles) {
+        const response = await fetch(mf.data.objectUrl);
+        const blob = await response.blob();
+        if (mediaFolder) {
+          mediaFolder.file(mf.name, blob);
+        }
+      }
+
+      // Revoke object URLs
+      for (const m of decryptedMedia) {
+        URL.revokeObjectURL(m.objectUrl);
+      }
+    }
 
     const frontmatter = [
       "---",
@@ -68,7 +98,15 @@ export async function exportAsMarkdownZip(entries: DecryptedEntry[]) {
       .filter(Boolean)
       .join("\n");
 
-    zip.file(filename, `${frontmatter}\n\n${entry.body}\n`);
+    const mediaMarkdown = mediaFiles
+      .map((mf) => `![](media/${mf.name})`)
+      .join("\n");
+
+    const content = mediaMarkdown
+      ? `${frontmatter}\n\n${entry.body}\n\n${mediaMarkdown}\n`
+      : `${frontmatter}\n\n${entry.body}\n`;
+
+    zip.file(filename, content);
   }
 
   const blob = await zip.generateAsync({ type: "blob" });
