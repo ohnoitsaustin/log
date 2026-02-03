@@ -115,13 +115,8 @@ export async function listEntries(
   key: CryptoKey,
   tagFilter?: string,
 ): Promise<DecryptedEntry[]> {
-  let query = supabase
-    .from("entries")
-    .select("id, encrypted_blob, iv, created_at, updated_at")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
-
-  // If filtering by tag, get entry IDs that have this tag first
+  // If filtering by tag, resolve entry IDs first
+  let tagEntryIds: string[] | null = null;
   if (tagFilter) {
     const { data: tagData } = await supabase
       .from("tags")
@@ -138,13 +133,32 @@ export async function listEntries(
 
     if (!entryTagData || entryTagData.length === 0) return [];
 
-    const entryIds = entryTagData.map((et) => et.entry_id);
-    query = query.in("id", entryIds);
+    tagEntryIds = entryTagData.map((et) => et.entry_id);
   }
 
-  const { data: rows, error } = await query;
+  // Paginate through all rows (Supabase defaults to 1000 max)
+  const PAGE_SIZE = 1000;
+  const rows: { id: string; encrypted_blob: string; iv: string; created_at: string; updated_at: string }[] = [];
+  let offset = 0;
 
-  if (error || !rows) return [];
+  while (true) {
+    let query = supabase
+      .from("entries")
+      .select("id, encrypted_blob, iv, created_at, updated_at")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (tagEntryIds) {
+      query = query.in("id", tagEntryIds);
+    }
+
+    const { data, error } = await query;
+    if (error || !data) break;
+    rows.push(...data);
+    if (data.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
 
   const entries: DecryptedEntry[] = [];
 

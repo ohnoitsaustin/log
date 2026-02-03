@@ -192,15 +192,25 @@ export async function getMediaCounts(
   _entryIds?: string[],
 ): Promise<Record<string, number>> {
   // Query all media for the current user (RLS scopes to auth.uid()).
-  // Avoids .in() with many UUIDs which can exceed URL length limits.
-  const { data, error } = await supabase
-    .from("media")
-    .select("entry_id");
+  // Paginate to avoid Supabase 1000-row default limit.
+  const PAGE_SIZE = 1000;
+  const allRows: { entry_id: string }[] = [];
+  let offset = 0;
 
-  if (error || !data) return {};
+  while (true) {
+    const { data, error } = await supabase
+      .from("media")
+      .select("entry_id")
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (error || !data) break;
+    allRows.push(...data);
+    if (data.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
 
   const counts: Record<string, number> = {};
-  for (const row of data) {
+  for (const row of allRows) {
     counts[row.entry_id] = (counts[row.entry_id] || 0) + 1;
   }
   return counts;
