@@ -110,8 +110,7 @@ export async function listEntries(
     .from("entries")
     .select("id, encrypted_blob, iv, created_at, updated_at")
     .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(50);
+    .order("created_at", { ascending: false });
 
   // If filtering by tag, get entry IDs that have this tag first
   if (tagFilter) {
