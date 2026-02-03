@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createEntry, type EntryBlob } from "@/lib/entries";
 import { listActivities, createActivity } from "@/lib/activities";
 import { getMediaForEntry, type DecryptedMedia } from "@/lib/media";
+import { formatWeather, type WeatherData } from "@/lib/weather";
 
 /* ── helpers ───────────────────────────────────────── */
 
@@ -29,6 +30,9 @@ interface ExportEntry {
   date: string;
   body: string;
   mood: number | null;
+  energy: number | null;
+  location: string;
+  weather: WeatherData | null;
   tags: string[];
   activities: string[];
 }
@@ -38,6 +42,9 @@ function toExportEntries(entries: DecryptedEntry[]): ExportEntry[] {
     date: e.created_at,
     body: e.body,
     mood: e.mood,
+    energy: e.energy,
+    location: e.location,
+    weather: e.weather,
     tags: e.tags,
     activities: e.activities,
   }));
@@ -91,6 +98,9 @@ export async function exportAsMarkdownZip(
       "---",
       `date: "${entry.created_at}"`,
       entry.mood !== null ? `mood: ${entry.mood}` : null,
+      entry.energy !== null ? `energy: ${entry.energy}` : null,
+      entry.location ? `location: "${entry.location}"` : null,
+      entry.weather ? `weather: "${formatWeather(entry.weather)} ${entry.weather.description}"` : null,
       entry.tags.length > 0 ? `tags: [${entry.tags.map((t) => `"${t}"`).join(", ")}]` : null,
       entry.activities.length > 0 ? `activities: [${entry.activities.map((a) => `"${a}"`).join(", ")}]` : null,
       "---",
@@ -129,6 +139,9 @@ export function parseImportJSON(raw: string): EntryBlob[] {
     return {
       body: obj.body,
       mood: typeof obj.mood === "number" ? obj.mood : null,
+      energy: typeof obj.energy === "number" ? obj.energy : null,
+      location: typeof obj.location === "string" ? obj.location : "",
+      weather: typeof obj.weather === "object" && obj.weather !== null ? obj.weather as WeatherData : null,
       tags: Array.isArray(obj.tags)
         ? obj.tags.filter((t): t is string => typeof t === "string")
         : [],
@@ -154,6 +167,9 @@ export function parseImportCSV(raw: string): EntryBlob[] {
     return {
       body,
       mood: headers.includes("mood") ? parseFloat(values[headers.indexOf("mood")]) || null : null,
+      energy: headers.includes("energy") ? parseFloat(values[headers.indexOf("energy")]) || null : null,
+      location: headers.includes("location") ? values[headers.indexOf("location")] || "" : "",
+      weather: null,
       tags: headers.includes("tags")
         ? values[headers.indexOf("tags")]
           .split(";")
@@ -261,6 +277,9 @@ export function parseDaylioCSV(raw: string): ImportEntry[] {
       blob: {
         body: note,
         mood,
+        energy: null,
+        location: "",
+        weather: null,
         tags: [],
         activities,
       },

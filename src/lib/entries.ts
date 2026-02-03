@@ -1,11 +1,15 @@
 import { encrypt, decrypt } from "@/lib/crypto";
 import { toHex, fromHex } from "@/lib/crypto-utils";
 import { getMediaCounts } from "@/lib/media";
+import type { WeatherData } from "@/lib/weather";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface EntryBlob {
   body: string;
   mood: number | null;
+  energy: number | null;
+  location: string;
+  weather: WeatherData | null;
   tags: string[];
   activities: string[];
 }
@@ -14,6 +18,9 @@ export interface DecryptedEntry {
   id: string;
   body: string;
   mood: number | null;
+  energy: number | null;
+  location: string;
+  weather: WeatherData | null;
   tags: string[];
   activities: string[];
   created_at: string;
@@ -149,6 +156,9 @@ export async function listEntries(
         id: row.id,
         body: blob.body,
         mood: blob.mood,
+        energy: blob.energy ?? null,
+        location: blob.location ?? "",
+        weather: typeof blob.weather === "object" && blob.weather !== null ? blob.weather : null,
         tags: blob.tags ?? [],
         activities: blob.activities ?? [],
         created_at: row.created_at,
@@ -194,6 +204,9 @@ export async function getEntry(
       id: row.id,
       body: blob.body,
       mood: blob.mood,
+      energy: blob.energy ?? null,
+      location: blob.location ?? "",
+      weather: typeof blob.weather === "object" && blob.weather !== null ? blob.weather : null,
       tags: blob.tags,
       activities: blob.activities,
       created_at: row.created_at,

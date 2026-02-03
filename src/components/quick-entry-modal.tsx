@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useKey } from "@/components/key-provider";
 import { createEntry } from "@/lib/entries";
+import { WeatherToggle } from "@/components/weather-toggle";
+import type { WeatherData } from "@/lib/weather";
 import type { Activity } from "@/lib/activities";
 
 const QUICK_MOODS = [
@@ -30,6 +32,7 @@ export function QuickEntryModal({
   const backdropRef = useRef<HTMLDivElement>(null);
 
   const [quickActivities, setQuickActivities] = useState<string[]>([]);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
   const [savingMood, setSavingMood] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +59,9 @@ export function QuickEntryModal({
       await createEntry(supabase, key, user.id, {
         body: "",
         mood: moodValue,
+        energy: null,
+        location: "",
+        weather,
         tags: [],
         activities: quickActivities,
       });
@@ -79,6 +85,8 @@ export function QuickEntryModal({
         <h2 className="text-foreground text-xl font-semibold">New Entry</h2>
 
         <div className="mt-4 space-y-4">
+          <WeatherToggle value={weather} onChange={setWeather} disabled={savingMood !== null} />
+
           {availableActivities.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {availableActivities.map((a) => {

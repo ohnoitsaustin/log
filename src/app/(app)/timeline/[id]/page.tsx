@@ -6,7 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 import { useKey } from "@/components/key-provider";
 import { getEntry, type DecryptedEntry } from "@/lib/entries";
 import { moodToEmoji } from "@/components/mood-picker";
+import { energyToEmoji } from "@/components/energy-picker";
 import { activityToEmoji } from "@/components/activity-input";
+import { formatWeather } from "@/lib/weather";
 import { listActivities, createActivity, type Activity } from "@/lib/activities";
 import { getMediaForEntry, deleteMediaForEntry, type DecryptedMedia } from "@/lib/media";
 import { EditEntryModal } from "@/components/edit-entry-modal";
@@ -93,6 +95,7 @@ export default function EntryDetailPage() {
   }
 
   const emoji = moodToEmoji(entry.mood);
+  const energyEmoji = energyToEmoji(entry.energy);
 
   return (
     <div>
@@ -116,7 +119,16 @@ export default function EntryDetailPage() {
             })}
           </time>
           {emoji && <span className="text-xl">{emoji}</span>}
+          {energyEmoji && <span className="text-xl">{energyEmoji}</span>}
         </div>
+
+        {(entry.location || entry.weather) && (
+          <div className="mt-1 flex items-center gap-3 text-xs text-foreground/40">
+            {entry.location && <span>{entry.location}</span>}
+            {entry.location && entry.weather && <span>&middot;</span>}
+            {entry.weather && <span>{formatWeather(entry.weather)}</span>}
+          </div>
+        )}
 
         <div className="text-foreground mt-4 text-sm leading-relaxed whitespace-pre-wrap">
           {entry.body}
@@ -217,6 +229,9 @@ export default function EntryDetailPage() {
               ...entry,
               body: blob.body,
               mood: blob.mood,
+              energy: blob.energy,
+              location: blob.location,
+              weather: blob.weather,
               tags: blob.tags,
               activities: blob.activities,
             });

@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { moodToEmoji } from "@/components/mood-picker";
+import { energyToEmoji } from "@/components/energy-picker";
 import { activityToEmoji } from "@/components/activity-input";
+import { formatWeather } from "@/lib/weather";
 import type { DecryptedEntry } from "@/lib/entries";
 import type { Activity } from "@/lib/activities";
 
 export function EntryCard({ entry, activities, isLast = false }: { entry: DecryptedEntry; activities: Activity[]; isLast?: boolean }) {
   const emoji = moodToEmoji(entry.mood);
+  const eEmoji = energyToEmoji(entry.energy);
 
   return (
     <div className="flex gap-3 pb-1">
@@ -38,6 +41,10 @@ export function EntryCard({ entry, activities, isLast = false }: { entry: Decryp
             </span>
           ))}
 
+          {eEmoji && (
+            <span className="text-base" title="Energy">{eEmoji}</span>
+          )}
+
           {entry.mediaCount > 0 && (
             <span className="text-foreground/50 text-xs flex items-center gap-0.5">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
@@ -45,6 +52,14 @@ export function EntryCard({ entry, activities, isLast = false }: { entry: Decryp
               </svg>
               {entry.mediaCount}
             </span>
+          )}
+
+          {entry.weather && (
+            <span className="text-foreground/40 text-xs">{formatWeather(entry.weather)}</span>
+          )}
+
+          {entry.location && (
+            <span className="text-foreground/40 text-xs">{entry.location}</span>
           )}
         </div>
         {entry.body &&

@@ -5,8 +5,10 @@ import { createClient } from "@/lib/supabase/client";
 import { useKey } from "@/components/key-provider";
 import { updateEntry, type DecryptedEntry, type EntryBlob } from "@/lib/entries";
 import { MoodPicker } from "@/components/mood-picker";
+import { EnergyPicker } from "@/components/energy-picker";
 import { TagInput } from "@/components/tag-input";
 import { ActivityInput } from "@/components/activity-input";
+import { WeatherToggle } from "@/components/weather-toggle";
 import { ImagePicker, type SelectedImage } from "@/components/image-picker";
 import {
   getMediaForEntry,
@@ -35,6 +37,9 @@ export function EditEntryModal({
 
   const [body, setBody] = useState(entry.body);
   const [mood, setMood] = useState<number | null>(entry.mood);
+  const [energy, setEnergy] = useState<number | null>(entry.energy);
+  const [location, setLocation] = useState(entry.location);
+  const [weather, setWeather] = useState(entry.weather);
   const [tags, setTags] = useState<string[]>(entry.tags);
   const [activities, setActivities] = useState<string[]>(entry.activities);
   const [existingMedia, setExistingMedia] = useState<DecryptedMedia[]>([]);
@@ -98,7 +103,7 @@ export function EditEntryModal({
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const blob: EntryBlob = { body: body.trim(), mood, tags, activities };
+      const blob: EntryBlob = { body: body.trim(), mood, energy, location: location.trim(), weather, tags, activities };
       await updateEntry(supabase, key, entry.id, user.id, blob);
 
       // Delete removed media
@@ -149,6 +154,24 @@ export function EditEntryModal({
             <label className="text-foreground/60 mb-2 block text-sm font-medium">Mood</label>
             <MoodPicker value={mood} onChange={setMood} />
           </div>
+
+          <div>
+            <label className="text-foreground/60 mb-2 block text-sm font-medium">Energy</label>
+            <EnergyPicker value={energy} onChange={setEnergy} />
+          </div>
+
+          <div>
+            <label className="text-foreground/60 mb-2 block text-sm font-medium">Location</label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Where are you?"
+              className="border-foreground/20 bg-background text-foreground placeholder:text-foreground/40 focus:border-foreground/40 w-full rounded-md border px-3 py-2 text-sm focus:outline-none"
+            />
+          </div>
+
+          <WeatherToggle value={weather} onChange={setWeather} disabled={saving} />
 
           <div>
             <label className="text-foreground/60 mb-2 block text-sm font-medium">Tags</label>
